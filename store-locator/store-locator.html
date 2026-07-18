@@ -2,6 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZN64HZ3Q2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-2ZN64HZ3Q2');
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Store Locator | Whatcha Drinking?</title>
 <meta name="description" content="Find Whatcha spiked cocktail pouches near you. Search by zip code to locate the closest retailer carrying Spiked Peach Lemonade and Spiked Tropical Punch." />
@@ -106,6 +115,7 @@
 
   /* ---------- admin panel ---------- */
   #admin-toggle {
+    display: none;
     position: fixed;
     bottom: 1.25rem;
     right: 1.25rem;
@@ -421,12 +431,21 @@ document.getElementById('zip-input').addEventListener('keydown', function (e) {
 });
 
 // ── Admin: quick local add (browser-only — see note in the panel) ──
+// Only visible/usable with the right key in the URL, e.g.
+// store-locator.html?admin=whatcha-owner-2026 — bookmark that link.
+var ADMIN_KEY = 'whatcha-owner-2026';
+function isAdmin() {
+  return new URLSearchParams(window.location.search).get('admin') === ADMIN_KEY;
+}
+
 function toggleAdmin() {
+  if (!isAdmin()) return;
   var panel = document.getElementById('admin-panel');
   panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
 
 function addStore() {
+  if (!isAdmin()) return;
   var name = document.getElementById('f-name').value.trim();
   var address = document.getElementById('f-address').value.trim();
   var hours = document.getElementById('f-hours').value.trim();
@@ -467,6 +486,10 @@ function exportLocations() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  if (isAdmin()) {
+    document.getElementById('admin-toggle').style.display = 'block';
+  }
+
   map = L.map('map', { scrollWheelZoom: false }).setView([39.8283, -98.5795], 4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
