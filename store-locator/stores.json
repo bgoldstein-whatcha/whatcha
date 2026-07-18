@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Example Retailer – Downtown",
+    "address": "100 Main St, Hartford, CT 06103",
+    "hours": "Mon–Sat 9am–9pm, Sun 10am–6pm",
+    "phone": "(860) 555-0101"
+  },
+  {
+    "name": "Example Retailer – West End",
+    "address": "450 Park Rd, West Hartford, CT 06110",
+    "hours": "Daily 8am–10pm",
+    "phone": "(860) 555-0202"
+  }
+]

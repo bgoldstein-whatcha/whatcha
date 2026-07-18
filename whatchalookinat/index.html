@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Whatcha Lookin At?!</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" type="image/png" href="../assets/images/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+  body { overflow-x: hidden; background: var(--navy); }
+
+  .wla-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: clamp(1.5rem, 5vw, 4rem);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .wla-headline {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--yellow);
+    text-shadow: 6px 6px 0 var(--coral);
+    font-size: clamp(2.75rem, 9vw, 7rem);
+    line-height: 0.95;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .wla-sub {
+    font-family: var(--font-ui);
+    letter-spacing: 0.04em;
+    color: var(--navy);
+    background: var(--cream);
+    border: 4px solid var(--navy);
+    border-radius: 999px;
+    box-shadow: var(--shadow-hard);
+    padding: 0.5rem 1.5rem;
+    font-size: clamp(1rem, 2.2vw, 1.3rem);
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .wla-gif-frame {
+    background: var(--cream);
+    border: 6px solid var(--yellow);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 0.75rem;
+    max-width: min(90vw, 480px);
+    transform: rotate(-1deg);
+    position: relative;
+    z-index: 2;
+  }
+  .wla-gif-frame img {
+    display: block;
+    width: 100%;
+    border-radius: calc(var(--radius) - 10px);
+    min-height: 220px;
+    background: var(--sky-pale);
+    object-fit: cover;
+  }
+  .wla-gif-credit {
+    font-family: "Nunito Sans", sans-serif;
+    color: var(--sky-pale);
+    opacity: 0.6;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+  }
+  .wla-gif-credit a { text-decoration: underline; color: inherit; }
+
+  .wla-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .wla-pouch {
+    position: absolute;
+    width: clamp(80px, 11vw, 140px);
+    filter: drop-shadow(4px 4px 0 rgba(18,18,58,0.5));
+    z-index: 1;
+    animation: sway 5s ease-in-out infinite;
+  }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+  }
+  .wla-pouch--1 { top: 8%; left: 6%; }
+  .wla-pouch--2 { bottom: 8%; right: 6%; animation-delay: -2.5s; }
+
+  .wla-back {
+    font-family: var(--font-ui);
+    color: var(--navy);
+    background: var(--yellow);
+    border: 3px solid var(--navy);
+    border-radius: 999px;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.85rem;
+    position: fixed;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    z-index: 5;
+    box-shadow: var(--shadow-hard-sm);
+  }
+
+  @media (max-width: 700px) {
+    .wla-pouch { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="age-gate" data-age-gate role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
+  <div class="age-gate__card">
+    <div class="logo-badge">
+      <img src="../assets/images/logo/logo-badge-combined.png" alt="Whatcha Drinking?" />
+    </div>
+    <h2 id="age-gate-title">Are you 21+?</h2>
+    <div class="age-gate__actions">
+      <button type="button" class="btn" data-age-yes>Absolutely!</button>
+      <button type="button" class="btn btn--outline" data-age-no>Not yet</button>
+    </div>
+  </div>
+</div>
+
+<div class="wla-wrap sparkle-field">
+  <span class="sparkle" aria-hidden="true" style="--sparkle-size:22px; --sparkle-color:var(--yellow); top:10%; left:14%;"></span>
+  <span class="sparkle" aria-hidden="true" style="--sparkle-size:16px; --sparkle-color:var(--sky); top:16%; right:16%;"></span>
+  <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--teal); bottom:14%; left:18%;"></span>
+  <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--coral); bottom:20%; right:20%;"></span>
+
+  <img class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.png" alt="" aria-hidden="true" />
+  <img class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.png" alt="" aria-hidden="true" />
+
+  <h1 class="wla-headline">WHATCHA<br>LOOKIN AT?!</h1>
+  <p class="wla-sub">you found the secret page. Squeeze the Day!</p>
+
+  <div class="wla-gif-frame">
+    <img id="celebrate-gif" src="" alt="A random celebratory GIF" />
+  </div>
+  <p class="wla-gif-credit">GIFs via <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>, public domain / CC BY(-SA)</p>
+
+  <div class="wla-actions">
+    <button type="button" class="btn" id="shuffle-btn">Gimme another one!</button>
+  </div>
+</div>
+
+<a class="wla-back" href="../index.html">&larr; back to whatchadrinking.com</a>
+
+<script src="../assets/main.js"></script>
+<script>
+// ════════════════════════════════════════════════
+//  Random gif, self-hosted (no third-party API — an earlier version
+//  called Giphy's public demo key, which turned out to be dead/banned
+//  from years of reuse across the web). Sourced from Wikimedia Commons
+//  under CC0/public-domain/CC-BY(-SA) licenses. Add more filenames here
+//  to widen the pool further.
+// ════════════════════════════════════════════════
+var GIFS = [
+  'fireworks.gif', 'cake.gif', 'horse.gif', 'spinning-dancer.gif',
+  'sleeping-cat.gif', 'floss-dance.gif', 'cat-paws.gif',
+  'dog-wiggle.gif', 'cat-funny.gif', 'thumbsup.gif',
+  'sticker-exciting.gif', 'sticker-selfie.gif', 'sticker-what.gif',
+  'sticker-astronaut.gif', 'sticker-dragon.gif'
+];
+var lastGif = null;
+
+function loadRandomGif() {
+  var img = document.getElementById('celebrate-gif');
+  var pick = GIFS[Math.floor(Math.random() * GIFS.length)];
+  // avoid showing the same one twice in a row
+  if (GIFS.length > 1) {
+    while (pick === lastGif) { pick = GIFS[Math.floor(Math.random() * GIFS.length)]; }
+  }
+  lastGif = pick;
+  img.src = '../assets/images/gifs/' + pick;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  loadRandomGif();
+  document.getElementById('shuffle-btn').addEventListener('click', loadRandomGif);
+});
+</script>
+</body>
+</html>

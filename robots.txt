@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /whatchalookinat/
+
+Sitemap: https://whatchadrinking.com/sitemap.xml
