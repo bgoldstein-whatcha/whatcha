@@ -3,13 +3,10 @@
   var AGE_KEY = "whatcha_age_verified";
 
   // ════════════════════════════════════════════════
-  //  Form delivery — all forms on the site (email signup, join the team,
-  //  sell whatcha) submit here via Formspree, which forwards them to
-  //  hello@whatchadrinking.com. To activate:
-  //  1. Create a free form at https://formspree.io targeting hello@whatchadrinking.com
-  //  2. Replace YOUR_FORM_ID below with the ID Formspree gives you
+  //  Form delivery — each form on the site submits to its own Formspree
+  //  endpoint (set via data-form-endpoint on the <form> itself), so
+  //  submissions land in the right Formspree dashboard/inbox per form.
   // ════════════════════════════════════════════════
-  var FORM_ENDPOINT = "https://formspree.io/f/YOUR_FORM_ID";
 
   function initAgeGate() {
     var gate = document.querySelector("[data-age-gate]");
@@ -65,7 +62,7 @@
         var data = new FormData(form);
         data.append("_subject", "New " + (form.getAttribute("aria-label") || "Whatcha site") + " submission");
 
-        fetch(FORM_ENDPOINT, {
+        fetch(form.getAttribute("data-form-endpoint"), {
           method: "POST",
           headers: { Accept: "application/json" },
           body: data
