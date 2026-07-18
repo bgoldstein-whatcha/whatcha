@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Whatcha Drinking? | Spiked Cocktail Pouches</title>
+<meta name="description" content="Whatcha is a spirits-based RTD cocktail in a pouch. No bubbles, all fun. Squeeze the Day with Spiked Peach Lemonade and Spiked Tropical Punch." />
+<link rel="canonical" href="https://whatchadrinking.com/" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0526c5" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Whatcha Drinking?" />
+<meta property="og:title" content="Whatcha Drinking? | Spiked Cocktail Pouches" />
+<meta property="og:description" content="Whatcha is a spirits-based RTD cocktail in a pouch. No bubbles, all fun. Squeeze the Day with Spiked Peach Lemonade and Spiked Tropical Punch." />
+<meta property="og:url" content="https://whatchadrinking.com/" />
+<meta property="og:image" content="https://whatchadrinking.com/assets/images/pouches/tropical-punch.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Whatcha Drinking? | Spiked Cocktail Pouches" />
+<meta name="twitter:description" content="Whatcha is a spirits-based RTD cocktail in a pouch. No bubbles, all fun. Squeeze the Day with Spiked Peach Lemonade and Spiked Tropical Punch." />
+<meta name="twitter:image" content="https://whatchadrinking.com/assets/images/pouches/tropical-punch.png" />
+<link rel="icon" type="image/png" href="assets/images/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="assets/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Whatcha Drinking?",
+  "legalName": "Cabana Cocktails, LLC",
+  "url": "https://whatchadrinking.com/",
+  "logo": "https://whatchadrinking.com/assets/images/logo/whatcha-wordmark.png",
+  "description": "Whatcha is a spirits-based RTD cocktail in a pouch — Spiked Peach Lemonade and Spiked Tropical Punch, 10% ABV.",
+  "email": "hello@whatchadrinking.com",
+  "sameAs": [
+    "https://www.instagram.com/drinkwhatcha",
+    "https://www.tiktok.com/@drinkwhatcha"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {
+      "@type": "Product",
+      "position": 1,
+      "name": "Whatcha Spiked Tropical Punch",
+      "description": "Mango, passionfruit & cherry, blended with vodka. Bright, juicy, no bubbles required.",
+      "image": "https://whatchadrinking.com/assets/images/pouches/tropical-punch.png",
+      "brand": { "@type": "Brand", "name": "Whatcha Drinking?" }
+    },
+    {
+      "@type": "Product",
+      "position": 2,
+      "name": "Whatcha Spiked Peach Lemonade",
+      "description": "Sun-ripe peach and tart lemonade, spiked and ready to squeeze. Built for beach days and backyards.",
+      "image": "https://whatchadrinking.com/assets/images/pouches/peach-lemonade.png",
+      "brand": { "@type": "Brand", "name": "Whatcha Drinking?" }
+    }
+  ]
+}
+</script>
+</head>
+<body>
+
+<div class="age-gate" data-age-gate role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
+  <div class="age-gate__card">
+    <div class="logo-badge">
+      <img src="assets/images/logo/logo-badge-combined.png" alt="Whatcha Drinking?" />
+    </div>
+    <h2 id="age-gate-title">Are you 21+?</h2>
+    <div class="age-gate__actions">
+      <button type="button" class="btn" data-age-yes>Absolutely!</button>
+      <button type="button" class="btn btn--outline" data-age-no>Not yet</button>
+    </div>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="brand-mark" aria-label="Whatcha Drinking — home">
+      <img src="assets/images/logo/whatcha-wordmark.png" alt="Whatcha Drinking?" width="180" height="70" />
+    </a>
+    <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <ul class="nav-links" data-nav-links>
+      <li><a href="about.html">About</a></li>
+      <li><a href="index.html#flavors">Flavors</a></li>
+      <li><a href="index.html#contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track" data-marquee>
+    <span class="marquee__star">✦</span>
+    <span class="marquee__word">COMING SOON</span>
+    <span class="marquee__star">✦</span>
+    <span class="marquee__word">Whatcha Drinking?</span>
+  </div>
+</div>
+
+<main>
+
+  <section class="hero sparkle-field">
+    <div class="hero__bg" aria-hidden="true"></div>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:26px; --sparkle-color:var(--yellow); top:12%; left:6%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:16px; --sparkle-color:var(--cream); top:60%; left:2%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:20px; --sparkle-color:var(--yellow); top:78%; left:38%;"></span>
+    <div class="container hero__inner">
+      <div class="hero__copy">
+        <h1>Squeeze<br>the Day!</h1>
+        <p class="hero__tag">No bubbles. All fun.</p>
+        <a href="store-locator/store-locator.html" class="btn">Find Whatcha</a>
+      </div>
+      <div class="hero__pouches" data-parallax>
+        <img src="assets/images/pouches/peach-lemonade.png" alt="Whatcha Spiked Peach Lemonade pouch, 10% alcohol by volume" class="pouch pouch--left" width="410" height="668" loading="eager" />
+        <img src="assets/images/pouches/tropical-punch.png" alt="Whatcha Spiked Tropical Punch pouch, 10% alcohol by volume" class="pouch pouch--right" width="410" height="668" loading="eager" />
+      </div>
+    </div>
+  </section>
+
+  <section id="flavors" class="flavors section-pad sparkle-field">
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--coral); top:6%; right:8%;"></span>
+    <div class="container">
+      <div class="text-center flavors__head">
+        <h2>Pick your pouch</h2>
+      </div>
+
+      <div class="flavor-grid">
+        <article class="flavor-card flavor-card--punch">
+          <img src="assets/images/pouches/tropical-punch.png" alt="Whatcha Spiked Tropical Punch pouch" width="260" height="423" />
+          <div class="flavor-card__body">
+            <h3>Tropical Punch</h3>
+            <p>Mango, passionfruit &amp; cherry, blended with vodka. Bright, juicy, no bubbles required.</p>
+            <ul class="flavor-chips">
+              <li>10% ALC/VOL</li>
+              <li>3g Added Sugar</li>
+              <li>6.7 FL OZ</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="flavor-card flavor-card--peach">
+          <img src="assets/images/pouches/peach-lemonade.png" alt="Whatcha Spiked Peach Lemonade pouch" width="260" height="423" />
+          <div class="flavor-card__body">
+            <h3>Peach Lemonade</h3>
+            <p>Sun-ripe peach and tart lemonade, spiked and ready to squeeze. Built for beach days and backyards.</p>
+            <ul class="flavor-chips">
+              <li>10% ALC/VOL</li>
+              <li>3g Added Sugar</li>
+              <li>6.7 FL OZ</li>
+            </ul>
+          </div>
+        </article>
+      </div>
+
+      <div class="fruit-row" aria-hidden="true">
+        <img src="assets/images/fruit/fruit-mango.png" alt="" />
+        <img src="assets/images/fruit/fruit-cherries.png" alt="" />
+        <img src="assets/images/fruit/fruit-passionfruit.png" alt="" />
+        <img src="assets/images/fruit/fruit-peach.png" alt="" />
+        <img src="assets/images/fruit/fruit-lemon.png" alt="" />
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+  <section class="story section-pad sparkle-field">
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:20px; --sparkle-color:var(--coral); top:10%; left:4%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--navy); bottom:14%; left:14%;"></span>
+    <div class="container story__inner">
+      <div class="story__copy">
+        <h2>What's Whatcha?</h2>
+        <p class="fs-body-lg">We noticed people were already mixing cocktails into pouches for beach days, parks and concerts. So we made it official — a real spirits-based RTD, built for the format our generation grew up loving.</p>
+        <a href="about.html" class="btn btn--navy">Read our story</a>
+      </div>
+      <div class="story__art">
+        <img class="story__starburst" src="assets/images/logo/starburst.png" alt="" aria-hidden="true" />
+        <img class="story__pouch" src="assets/images/pouches/tropical-punch.png" alt="Whatcha Spiked Tropical Punch pouch" />
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+  <section id="find" class="locator section-pad">
+    <div class="container locator__inner">
+      <div class="locator__copy">
+        <h2>Squeeze the Day near you</h2>
+        <p class="fs-body-lg">Whatcha launches first at the Hartford HealthCare Amphitheater in Bridgeport, CT — with more stops on the way this season.</p>
+        <a href="store-locator/store-locator.html" class="btn btn--navy">Full store locator</a>
+      </div>
+      <div class="locator__map" id="locator-map" role="img" aria-label="Map showing the Hartford HealthCare Amphitheater in Bridgeport, Connecticut"></div>
+    </div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+  <section class="signup section-pad" id="signup">
+    <div class="signup__bg" aria-hidden="true"></div>
+    <div class="container text-center signup__inner">
+      <h2>Want more Whatcha?</h2>
+      <p class="fs-body-lg">Updates, news and more.</p>
+      <form class="signup__form" data-form aria-label="Email signup">
+        <label for="signup-email" class="visually-hidden">Enter your email</label>
+        <input id="signup-email" type="email" name="email" placeholder="Enter your email here..." required />
+        <button type="submit" class="btn">Submit</button>
+      </form>
+      <p class="form-status" data-form-status role="status"></p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer" id="contact">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="index.html#flavors">Flavors</a></li>
+          <li><a href="store-locator/store-locator.html">Find in store</a></li>
+          <li><a href="about.html">About us</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Work with us</h4>
+        <ul>
+          <li><a href="join-the-team.html">Join the team</a></li>
+          <li><a href="sell-whatcha.html">Wanna sell Whatcha?</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact Us</h4>
+        <ul>
+          <li><a href="mailto:hello@whatchadrinking.com">hello@whatchadrinking.com</a></li>
+          <li><a href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener">@drinkwhatcha</a></li>
+        </ul>
+        <div class="footer-social">
+          <a href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener" aria-label="Whatcha on Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+          <a href="https://www.tiktok.com/@drinkwhatcha" target="_blank" rel="noopener" aria-label="Whatcha on TikTok">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.53.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.42-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Whatcha Drinking, Inc., Chicago, IL. All Rights Reserved.</p>
+      <p>Whatcha is made with vodka, natural flavors, sugar &amp; sucralose. 10% Alc./Vol. Drink responsibly. Must be 21+.</p>
+    </div>
+  </div>
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/main.js"></script>
+</body>
+</html>

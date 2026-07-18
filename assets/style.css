@@ -1,0 +1,669 @@
+/* ==========================================================================
+   Whatcha Drinking? — shared design system
+   Retro-pop comic brand: royal blue, coral, sunshine yellow, punch red.
+   Comps: Poppi / Surfside / Sun Cruiser — full-bleed hero photography,
+   restrained chrome, one confident focal point per section, real motion.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap");
+
+@font-face {
+  font-family: "FT Buck";
+  src: url("fonts/ft-buck-regular.woff2") format("woff2"),
+       url("fonts/ft-buck-regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bazook";
+  src: url("fonts/bazook-regular.woff2") format("woff2"),
+       url("fonts/bazook-regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* FT Buck: reserved for the biggest headline moments only (hero, badge). */
+  --font-display: "FT Buck", "Baloo 2", sans-serif;
+  /* Bazook: the workhorse — every sub-headline, nav item, button, label. */
+  --font-ui: "Bazook", "Baloo 2", sans-serif;
+
+  /* brand palette — exact codes */
+  --navy: #0526c5;
+  --navy-deep: #041b8a;
+  --sky: #75d0f7;
+  --sky-pale: #e2f6fe;
+  --teal: #27baad;
+  --teal-pale: #dcf5f2;
+  --coral: #f37847;
+  --coral-deep: #d9622f;
+  --yellow: #ffe808;
+  --yellow-deep: #e6cf00;
+  --red: #f47563;
+  --cream: #fffaf0;
+  --ink: #12123a;
+  --sage: #c8dfb8;
+
+  --max-width: 1280px;
+  --edge: clamp(1.5rem, 5vw, 4rem);
+
+  --fs-display: clamp(2.1rem, 3.4vw + 1rem, 4.5rem);
+  --fs-h1: clamp(2.25rem, 3vw + 1.25rem, 4rem);
+  --fs-h2: clamp(1.9rem, 2vw + 1.1rem, 3rem);
+  --fs-h3: clamp(1.3rem, 1vw + 0.95rem, 1.65rem);
+  --fs-body-lg: clamp(1.05rem, 0.4vw + 0.95rem, 1.3rem);
+  --fs-body: clamp(0.95rem, 0.2vw + 0.9rem, 1.05rem);
+  --fs-small: 0.875rem;
+
+  --radius: 24px;
+  --radius-sm: 14px;
+  --shadow-hard: 6px 6px 0 rgba(5, 38, 197, 0.9);
+  --shadow-hard-sm: 4px 4px 0 rgba(5, 38, 197, 0.9);
+  --shadow-soft: 0 20px 45px rgba(5, 38, 197, 0.14);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+
+body {
+  margin: 0;
+  font-family: "Nunito Sans", "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--fs-body);
+  color: var(--ink);
+  background: var(--cream);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img { max-width: 100%; display: block; }
+
+/* FT Buck carries only the single largest statement on a page (h1).
+   Everything else — section titles, card titles — reads as Bazook,
+   which is legible at smaller sizes and reads as "designed", not "shouted". */
+h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  margin: 0;
+  color: var(--navy);
+}
+h2, h3, h4 {
+  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--navy);
+}
+h2 { font-size: var(--fs-h2); }
+h3 { font-size: var(--fs-h3); }
+
+p { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+.container {
+  max-width: var(--max-width);
+  margin-inline: auto;
+  padding-inline: var(--edge);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-weight: 700;
+  font-size: clamp(1rem, 0.3vw + 0.95rem, 1.15rem);
+  padding: 0.9em 2.1em;
+  border-radius: 999px;
+  border: 3px solid var(--navy);
+  background: var(--yellow);
+  color: var(--navy);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-hard-sm);
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 rgba(5,38,197,0.9); }
+.btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0 rgba(5,38,197,0.9); }
+.btn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+
+.btn--outline {
+  background: transparent;
+  color: var(--cream);
+  border-color: currentColor;
+}
+.btn--navy { background: var(--navy); color: var(--yellow); border-color: var(--navy); }
+
+/* ---------- logo badge (starburst + wordmark lockup, single pre-composed image) ---------- */
+.logo-badge {
+  display: inline-block;
+  line-height: 0;
+}
+.logo-badge img { width: 100%; display: block; }
+
+/* ---------- site header ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--navy);
+}
+.site-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.85rem;
+}
+.brand-mark { display: flex; align-items: center; }
+.brand-mark img { height: clamp(46px, 6vw, 68px); width: auto; }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2vw, 2.25rem);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav-links a {
+  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-weight: 700;
+  color: var(--yellow);
+  font-size: clamp(0.95rem, 0.5vw + 0.8rem, 1.1rem);
+  padding: 0.4em 0.2em;
+  position: relative;
+}
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -2px;
+  height: 3px;
+  background: var(--yellow);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+.nav-links a:hover::after,
+.nav-links a:focus-visible::after,
+.nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+
+.nav-toggle {
+  display: none;
+  background: none;
+  border: none;
+  color: var(--yellow);
+  cursor: pointer;
+  padding: 0.5rem;
+}
+.nav-toggle svg { width: 28px; height: 28px; }
+
+@media (max-width: 780px) {
+  .nav-links {
+    position: fixed;
+    inset: 0 0 0 auto;
+    height: 100vh;
+    width: min(78vw, 320px);
+    background: var(--navy);
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding: 6rem 2rem 2rem;
+    gap: 1.75rem;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    box-shadow: -8px 0 24px rgba(0,0,0,0.25);
+  }
+  .nav-links[data-open="true"] { transform: translateX(0); }
+  .nav-links a { font-size: 1.35rem; }
+  .nav-toggle { display: inline-flex; }
+}
+
+/* ---------- marquee ---------- */
+.marquee {
+  background: var(--yellow);
+  border-block: 4px solid var(--navy);
+  overflow: hidden;
+  white-space: nowrap;
+  padding-block: 0.65rem;
+}
+.marquee__track {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.1rem;
+  width: max-content;
+  animation: marquee 24s linear infinite;
+}
+.marquee__word {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  color: var(--navy);
+  font-size: clamp(0.95rem, 0.6vw + 0.7rem, 1.1rem);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+.marquee__star {
+  color: var(--navy);
+  font-size: clamp(0.85rem, 0.5vw + 0.6rem, 1rem);
+}
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee__track { animation: none; }
+}
+
+/* ---------- age gate ---------- */
+.age-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 18, 40, 0.65);
+  backdrop-filter: blur(3px);
+  padding: 1.5rem;
+}
+.age-gate[hidden] { display: none; }
+.age-gate__card {
+  background: var(--red);
+  border: 4px solid var(--navy);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  max-width: 460px;
+  width: 100%;
+  padding: clamp(2rem, 5vw, 2.75rem) clamp(1.75rem, 4vw, 2.5rem);
+  text-align: center;
+}
+.age-gate__card .logo-badge { width: min(340px, 92%); margin: 0 auto 1.25rem; }
+.age-gate__card h2 {
+  color: var(--cream);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+.age-gate__actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.age-gate__actions .btn { padding-inline: 1.75em; }
+.age-gate__actions .btn--outline { background: transparent; color: var(--cream); border-color: var(--cream); box-shadow: none; }
+
+/* ---------- sections ---------- */
+section { position: relative; }
+.section-pad { padding-block: clamp(4.5rem, 9vw, 8.5rem); }
+
+.eyebrow {
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  color: var(--coral-deep);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+/* ---------- footer ---------- */
+.site-footer {
+  background: var(--navy);
+  color: var(--cream);
+  padding-block: clamp(3rem, 7vw, 5rem) 1.75rem;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2.5rem;
+  padding-bottom: 2.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.footer-grid h4 {
+  color: var(--yellow);
+  font-size: 1.05rem;
+  margin-bottom: 1.1rem;
+}
+.footer-grid ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.footer-grid a:hover { color: var(--yellow); }
+.footer-social { display: flex; gap: 1.1rem; margin-top: 1.1rem; }
+.footer-social a { color: var(--cream); transition: color 0.15s ease, transform 0.15s ease; display: inline-flex; }
+.footer-social a:hover { color: var(--yellow); transform: translateY(-2px); }
+.footer-social svg { width: 24px; height: 24px; }
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 1.75rem;
+  font-size: var(--fs-small);
+  color: rgba(255,255,255,0.75);
+}
+
+/* ---------- form fields ---------- */
+.field { display: flex; flex-direction: column; gap: 0.4rem; text-align: left; }
+.field label {
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.field input,
+.field textarea {
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 1rem;
+  padding: 0.85em 1em;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--navy);
+  background: var(--cream);
+  color: var(--ink);
+  width: 100%;
+}
+.field input:focus,
+.field textarea:focus {
+  outline: 3px solid var(--sky);
+  outline-offset: 1px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+.form-status { font-weight: 700; margin-top: 1rem; }
+
+/* ---------- utility ---------- */
+.text-center { text-align: center; }
+.stack { display: flex; flex-direction: column; }
+.fs-body-lg { font-size: var(--fs-body-lg); line-height: 1.65; }
+
+/* ---------- pop-art sparkle accents ----------
+   Little four-point twinkle sparkles floating near headlines,
+   lifted straight off the pouch (they sit right next to "Squeeze
+   the Day" and the fruit art on the real packaging). */
+.sparkle-field { position: relative; }
+.sparkle {
+  position: absolute;
+  width: var(--sparkle-size, 22px);
+  height: var(--sparkle-size, 22px);
+  background: var(--sparkle-color, var(--yellow));
+  clip-path: polygon(50% 0%, 63% 34%, 100% 50%, 63% 66%, 50% 100%, 37% 66%, 0% 50%, 37% 34%);
+  pointer-events: none;
+  filter: drop-shadow(1px 1px 0 rgba(5,38,197,0.5));
+}
+
+/* ---------- section divider ----------
+   The pouch itself uses a bullet-dot rule ("Vodka with Natural
+   Flavors  •  •  •  •  •  6.7 FL OZ") along its bottom band —
+   reused here as a full-bleed navy bar between sections. */
+.section-divider {
+  height: 20px;
+  background-color: var(--navy);
+  background-image: radial-gradient(var(--yellow) 2.5px, transparent 3px);
+  background-size: 28px 100%;
+  background-position: center;
+  background-repeat: repeat-x;
+  border-block: 3px solid var(--navy-deep);
+}
+
+/* ==========================================================================
+   Home — hero
+   ========================================================================== */
+.hero { overflow: hidden; }
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11,18,102,0.05) 0%, rgba(95,184,238,0.15) 55%, var(--cream) 100%),
+    url("images/backgrounds/hero-sky.jpg") center/cover no-repeat;
+  z-index: -1;
+}
+.hero__inner {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  padding-block: clamp(3.5rem, 9vw, 7rem);
+  min-height: min(85vh, 760px);
+}
+.hero__copy h1 {
+  font-size: var(--fs-display);
+  color: var(--yellow);
+  text-shadow: 0.065em 0.065em 0 var(--navy);
+  /* optical correction: FT Buck's rounded "S" has a curved entry stroke that reads as
+     more indented than the flat-stroked "N" below it, even though both boxes start at
+     the exact same x — nudge purely visually (not the box) so the two lines look flush */
+  transform: translateX(-0.06em);
+}
+.hero__tag {
+  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-weight: 700;
+  font-size: var(--fs-h3);
+  color: var(--navy);
+  margin-block: 1.5rem 2.25rem;
+}
+.hero__pouches {
+  display: flex;
+  justify-content: center;
+  gap: clamp(-2rem, -3vw, -1rem);
+  position: relative;
+  perspective: 1000px;
+}
+.pouch {
+  width: min(58%, 460px);
+  aspect-ratio: 905 / 1500;
+  height: auto;
+  filter: drop-shadow(12px 20px 26px rgba(11,18,40,0.3));
+  will-change: transform;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pouch--left {
+  transform: rotate(calc(-6deg + var(--tilt-x, 0deg))) translate(var(--tilt-x-px, 0px), calc(10px + var(--tilt-y, 0px)));
+}
+.pouch--right {
+  transform: rotate(calc(6deg + var(--tilt-x, 0deg))) translate(var(--tilt-x-px, 0px), var(--tilt-y, 0px));
+  margin-left: -3rem;
+}
+
+@media (max-width: 900px) {
+  .hero__inner { grid-template-columns: 1fr; text-align: center; min-height: auto; }
+  .hero__copy { order: 2; }
+  .hero__pouches { order: 1; }
+  .hero__copy .btn { margin-inline: auto; }
+  .pouch { width: min(62%, 380px); }
+  .pouch--right { margin-left: -2.25rem; }
+  /* the desktop two-column hero reflows to a single stacked, centered column here,
+     so the sparkle accents (tuned as %-of-section positions for the wide layout)
+     need their own spots that stay clear of the centered copy block */
+  .hero .sparkle:nth-of-type(1) { top: 3% !important; left: 8% !important; }
+  .hero .sparkle:nth-of-type(2) { top: 4% !important; left: auto !important; right: 8% !important; }
+  .hero .sparkle:nth-of-type(3) { top: auto !important; bottom: 2% !important; left: 8% !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pouch { transition: none; }
+}
+
+/* ---------- flavors ---------- */
+.flavors__head { margin-bottom: clamp(2.5rem, 6vw, 4rem); }
+.flavor-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(1.75rem, 3vw, 2.75rem);
+}
+.flavor-card {
+  background: var(--cream);
+  border: 4px solid var(--navy);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: clamp(2rem, 4vw, 2.75rem) clamp(1.5rem, 3vw, 2.25rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.4rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.flavor-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgba(5,38,197,0.9); }
+.flavor-card--punch {
+  background: linear-gradient(180deg, var(--teal) 0%, var(--teal) 44%, var(--teal-pale) 44%, var(--teal-pale) 100%);
+}
+.flavor-card--peach {
+  background: linear-gradient(180deg, var(--coral) 0%, var(--coral) 44%, #fdeee0 44%, #fdeee0 100%);
+}
+.flavor-card--punch h3, .flavor-card--peach h3 { color: var(--navy); }
+.flavor-card img { width: min(62%, 230px); aspect-ratio: 905 / 1500; height: auto; }
+.flavor-card__body { display: flex; flex-direction: column; gap: 0.85rem; align-items: center; }
+.flavor-card p { color: var(--ink); opacity: 0.85; }
+.flavor-chips { list-style: none; display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; margin: 0; padding: 0; }
+.flavor-chips li {
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  background: var(--navy);
+  color: var(--yellow);
+  padding: 0.4em 0.9em;
+  border-radius: 999px;
+}
+@media (max-width: 700px) {
+  .flavor-grid { grid-template-columns: 1fr; }
+}
+
+.fruit-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-end;
+  gap: clamp(1.75rem, 6vw, 4rem);
+  margin-top: clamp(3rem, 7vw, 4.5rem);
+}
+.fruit-row img { width: clamp(72px, 12vw, 150px); }
+/* each fruit PNG has a different amount of transparent padding baked into its
+   canvas, so their drawn shadows don't sit on a common line by default — nudge
+   each down (measured via pixel analysis) so they all rest on the same ground. */
+.fruit-row img:nth-child(2) { transform: translateY(3.98%); }
+.fruit-row img:nth-child(3) { transform: translateY(2.45%); }
+.fruit-row img:nth-child(4) { transform: translateY(3.89%); }
+.fruit-row img:nth-child(5) { transform: translateY(4.43%); }
+/* ---------- story ---------- */
+.story { background: var(--sage); overflow: hidden; position: relative; }
+.story::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("images/patterns/fruit-tile.png");
+  background-size: 190px 190px;
+  background-repeat: repeat;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.story__inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: center;
+  text-align: left;
+}
+.story__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+  background: var(--cream);
+  border: 4px solid var(--navy);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hard);
+  padding: clamp(1.75rem, 4vw, 2.5rem);
+}
+.story__copy p { color: var(--navy); }
+.story__art { position: relative; display: flex; justify-content: center; }
+.story__starburst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(95%, 385px);
+  transform: translate(-50%, -50%) rotate(2deg);
+  filter: drop-shadow(0 8px 16px rgba(11,18,40,0.25));
+  z-index: 0;
+}
+.story__pouch {
+  position: relative;
+  z-index: 1;
+  width: min(56%, 227px);
+  aspect-ratio: 905 / 1500;
+  transform: rotate(-8deg);
+  filter: drop-shadow(10px 16px 20px rgba(11,18,40,0.3));
+}
+@media (max-width: 800px) {
+  .story__inner { grid-template-columns: 1fr; text-align: center; }
+  .story__copy { align-items: center; }
+  .story__art { margin-top: 1rem; }
+}
+
+/* ---------- locator / map ---------- */
+.locator { background: var(--coral); }
+.locator__inner {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  align-items: center;
+}
+.locator__map {
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  border: 4px solid var(--navy);
+  box-shadow: var(--shadow-hard);
+  overflow: hidden;
+  background: var(--cream);
+}
+.locator__copy .btn { margin-top: 0.5rem; }
+@media (max-width: 860px) {
+  .locator__inner { grid-template-columns: 1fr; }
+  .locator__map { order: -1; }
+}
+
+/* ---------- signup ---------- */
+.signup { color: var(--cream); text-align: center; }
+.signup__bg {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(11,18,40,0.55), rgba(11,18,40,0.7)),
+    url("images/backgrounds/signup-ocean.jpg") center/cover no-repeat;
+  z-index: -1;
+}
+.signup h2 { color: var(--cream); text-shadow: 0 2px 6px rgba(0,0,0,0.55), 0 4px 18px rgba(0,0,0,0.4); }
+.signup__inner { display: flex; flex-direction: column; align-items: center; gap: 0.85rem; }
+.signup__form {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  width: min(100%, 480px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.signup__form input {
+  flex: 1 1 260px;
+  padding: 0.9em 1.1em;
+  border-radius: 999px;
+  border: 3px solid var(--navy);
+  font-size: 1rem;
+  min-width: 0;
+}
+.signup .form-status { color: var(--yellow); }

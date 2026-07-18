@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Store Locator | Whatcha Drinking?</title>
+<meta name="description" content="Find Whatcha spiked cocktail pouches near you. Search by zip code to locate the closest retailer carrying Spiked Peach Lemonade and Spiked Tropical Punch." />
+<link rel="canonical" href="https://whatchadrinking.com/store-locator/store-locator.html" />
+<meta name="robots" content="index, follow" />
+<meta name="theme-color" content="#0526c5" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Whatcha Drinking?" />
+<meta property="og:title" content="Store Locator | Whatcha Drinking?" />
+<meta property="og:description" content="Find Whatcha spiked cocktail pouches near you. Search by zip code to locate the closest retailer carrying Spiked Peach Lemonade and Spiked Tropical Punch." />
+<meta property="og:url" content="https://whatchadrinking.com/store-locator/store-locator.html" />
+<meta property="og:image" content="https://whatchadrinking.com/assets/images/pouches/tropical-punch.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Store Locator | Whatcha Drinking?" />
+<meta name="twitter:description" content="Find Whatcha spiked cocktail pouches near you. Search by zip code to locate the closest retailer carrying Spiked Peach Lemonade and Spiked Tropical Punch." />
+<meta name="twitter:image" content="https://whatchadrinking.com/assets/images/pouches/tropical-punch.png" />
+<link rel="icon" type="image/png" href="../assets/images/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+  html, body { height: 100%; }
+  body { display: flex; flex-direction: column; }
+  main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+
+  .locator-toolbar {
+    background: var(--navy);
+    border-bottom: 4px solid var(--navy-deep);
+    padding: 0.85rem clamp(1rem, 3vw, 2rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .locator-toolbar h1 {
+    color: var(--cream);
+    font-size: var(--fs-h3);
+    margin: 0;
+  }
+  .locator-toolbar__search { display: flex; gap: 0.6rem; }
+  #zip-input {
+    padding: 0.6rem 0.9rem;
+    border-radius: var(--radius-sm);
+    border: 3px solid var(--navy-deep);
+    font-family: "Nunito Sans", sans-serif;
+    font-size: 0.95rem;
+    width: 160px;
+    outline: none;
+  }
+  #zip-input:focus { border-color: var(--yellow); }
+  #find-btn { padding-block: 0.6rem; font-size: 0.95rem; }
+
+  #locator-body { display: flex; flex: 1; min-height: 0; }
+
+  #sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--cream);
+    overflow-y: auto;
+    border-right: 4px solid var(--navy);
+    display: flex;
+    flex-direction: column;
+  }
+  #sidebar-header {
+    padding: 1rem 1.1rem;
+    font-family: var(--font-ui);
+    letter-spacing: 0.03em;
+    font-size: 0.85rem;
+    color: var(--navy);
+    text-transform: uppercase;
+    border-bottom: 3px solid var(--sky-pale);
+    flex-shrink: 0;
+  }
+  #store-list { flex: 1; }
+  .store-card {
+    padding: 0.9rem 1.1rem;
+    border-bottom: 2px solid var(--sky-pale);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .store-card:hover { background: var(--sky-pale); }
+  .store-card.active { background: var(--yellow); border-left: 5px solid var(--coral); }
+  .store-name { font-family: var(--font-ui); letter-spacing: 0.02em; font-size: 0.95rem; color: var(--navy); margin-bottom: 0.2rem; }
+  .store-address { font-size: 0.85rem; color: var(--ink); line-height: 1.4; }
+  .store-distance { font-size: 0.8rem; color: var(--coral-deep); font-weight: 700; margin-top: 0.3rem; }
+  .store-hours { font-size: 0.8rem; color: var(--ink); opacity: 0.7; margin-top: 0.15rem; }
+  #no-results, #loading-state {
+    padding: 2rem 1.1rem;
+    font-size: 0.9rem;
+    color: var(--ink);
+    opacity: 0.6;
+    text-align: center;
+    display: none;
+  }
+
+  #map { flex: 1; background: var(--teal-pale); }
+  .leaflet-popup-content-wrapper { border-radius: var(--radius-sm); border: 3px solid var(--navy); box-shadow: var(--shadow-hard); }
+  .store-popup h3 { font-family: var(--font-ui); font-size: 0.95rem; color: var(--navy); margin-bottom: 0.2rem; }
+  .store-popup p { font-size: 0.82rem; color: var(--ink); margin: 0.1rem 0; }
+
+  /* ---------- admin panel ---------- */
+  #admin-toggle {
+    position: fixed;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    background: var(--coral);
+    color: var(--cream);
+    border: 3px solid var(--navy);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    font-size: 1.4rem;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: var(--shadow-hard);
+  }
+  #admin-panel {
+    position: fixed;
+    bottom: 5.5rem;
+    right: 1.25rem;
+    background: var(--cream);
+    border: 3px solid var(--navy);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-hard);
+    padding: 1.25rem;
+    width: 320px;
+    max-width: calc(100vw - 2.5rem);
+    z-index: 1000;
+    display: none;
+  }
+  #admin-panel h2 { font-size: 1rem; color: var(--navy); margin-bottom: 0.4rem; }
+  #admin-panel .admin-note { font-size: 0.78rem; color: var(--ink); opacity: 0.75; margin-bottom: 0.9rem; line-height: 1.4; }
+  .field-group { margin-bottom: 0.7rem; }
+  .field-group label { display: block; font-size: 0.78rem; color: var(--ink); margin-bottom: 0.25rem; font-weight: 600; }
+  .field-group input {
+    width: 100%;
+    padding: 0.55rem 0.7rem;
+    border: 2px solid var(--sky-pale);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-family: "Nunito Sans", sans-serif;
+    outline: none;
+  }
+  .field-group input:focus { border-color: var(--teal); }
+  #add-store-btn { width: 100%; margin-top: 0.3rem; }
+  #admin-status { font-size: 0.78rem; margin-top: 0.6rem; text-align: center; min-height: 1rem; }
+  #export-btn {
+    width: 100%;
+    padding: 0.6rem;
+    background: var(--sky-pale);
+    color: var(--navy);
+    border: 2px solid var(--navy);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-top: 0.6rem;
+  }
+  #export-btn:hover { background: var(--sky); }
+  .admin-divider { border: none; border-top: 2px solid var(--sky-pale); margin: 0.9rem 0; }
+
+  @media (max-width: 700px) {
+    #locator-body { flex-direction: column; }
+    #sidebar { width: 100%; height: 220px; border-right: none; border-bottom: 4px solid var(--navy); }
+    #zip-input { width: 130px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="age-gate" data-age-gate role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
+  <div class="age-gate__card">
+    <div class="logo-badge">
+      <img src="../assets/images/logo/logo-badge-combined.png" alt="Whatcha Drinking?" />
+    </div>
+    <h2 id="age-gate-title">Are you 21+?</h2>
+    <div class="age-gate__actions">
+      <button type="button" class="btn" data-age-yes>Absolutely!</button>
+      <button type="button" class="btn btn--outline" data-age-no>Not yet</button>
+    </div>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container">
+    <a href="../index.html" class="brand-mark" aria-label="Whatcha Drinking — home">
+      <img src="../assets/images/logo/whatcha-wordmark.png" alt="Whatcha Drinking?" width="180" height="70" />
+    </a>
+    <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <ul class="nav-links" data-nav-links>
+      <li><a href="../about.html">About</a></li>
+      <li><a href="../index.html#flavors">Flavors</a></li>
+      <li><a href="../index.html#contact">Contact</a></li>
+    </ul>
+  </div>
+</header>
+
+<main>
+  <div class="locator-toolbar">
+    <h1>Find Whatcha near you</h1>
+    <div class="locator-toolbar__search">
+      <input id="zip-input" type="text" placeholder="Enter zip code" maxlength="10" />
+      <button id="find-btn" class="btn" onclick="searchByZip()">Search</button>
+    </div>
+  </div>
+
+  <div id="locator-body">
+    <div id="sidebar">
+      <div id="sidebar-header">Locations (<span id="count">0</span>)</div>
+      <div id="store-list"></div>
+      <div id="loading-state">Loading locations…</div>
+      <div id="no-results">No stores found in this area.</div>
+    </div>
+    <div id="map"></div>
+  </div>
+</main>
+
+<button id="admin-toggle" onclick="toggleAdmin()" title="Add Location">+</button>
+
+<div id="admin-panel">
+  <h2>Add store location</h2>
+  <p class="admin-note">This adds a store to your browser only, for testing. To make it permanent for every visitor, click Export below, then paste the result into <code>store-locator/stores.json</code> and redeploy the site.</p>
+  <div class="field-group">
+    <label>Store name *</label>
+    <input id="f-name" type="text" placeholder="e.g. Whole Foods Market" />
+  </div>
+  <div class="field-group">
+    <label>Address *</label>
+    <input id="f-address" type="text" placeholder="123 Main St, City, ST 00000" />
+  </div>
+  <div class="field-group">
+    <label>Hours (optional)</label>
+    <input id="f-hours" type="text" placeholder="Mon–Sun 8am–10pm" />
+  </div>
+  <div class="field-group">
+    <label>Phone (optional)</label>
+    <input id="f-phone" type="text" placeholder="(555) 123-4567" />
+  </div>
+  <button id="add-store-btn" class="btn" onclick="addStore()">Add location</button>
+  <div id="admin-status"></div>
+  <hr class="admin-divider" />
+  <button id="export-btn" onclick="exportLocations()">Export locations (JSON)</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../assets/main.js"></script>
+<script>
+// ════════════════════════════════════════════════
+//  Store data comes from stores.json (see that file for the format).
+//  Coordinates are looked up automatically (OpenStreetMap Nominatim)
+//  the first time a store is shown, then cached in this browser so
+//  repeat visits don't re-geocode the same address.
+// ════════════════════════════════════════════════
+var STORES = [];
+var map, tileLayer, markers = [], infoPopups = [], activeCard = null;
+var GEOCODE_CACHE_KEY = 'whatchaGeocodeCache';
+
+function loadGeocodeCache() {
+  try { return JSON.parse(localStorage.getItem(GEOCODE_CACHE_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function saveGeocodeCache(cache) {
+  localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(cache));
+}
+
+function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
+
+// Nominatim's usage policy asks for max ~1 request/sec and result caching,
+// which is why every lookup is cached in localStorage by address.
+function geocode(address, usOnly) {
+  var cache = loadGeocodeCache();
+  var cacheKey = usOnly ? address + '|us' : address;
+  if (cache[cacheKey]) return Promise.resolve(cache[cacheKey]);
+  var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+  // a bare zip code is ambiguous worldwide (e.g. "06110" also matches a Spanish
+  // postcode) — restrict to the US when we know we're searching a US zip
+  if (usOnly) url += '&countrycodes=us';
+  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
+    if (!data || !data.length) return null;
+    var coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    cache[cacheKey] = coords;
+    saveGeocodeCache(cache);
+    return coords;
+  }).catch(function () { return null; });
+}
+
+function loadLocalAdditions() {
+  try { return JSON.parse(localStorage.getItem('whatchaLocalStores')) || []; }
+  catch (e) { return []; }
+}
+function saveLocalAdditions(list) {
+  localStorage.setItem('whatchaLocalStores', JSON.stringify(list));
+}
+
+function fetchStores() {
+  return fetch('stores.json').then(function (res) {
+    if (!res.ok) throw new Error('no stores.json');
+    return res.json();
+  }).catch(function () { return []; }).then(function (fromFile) {
+    return fromFile.concat(loadLocalAdditions());
+  });
+}
+
+function haversine(lat1, lng1, lat2, lng2) {
+  var R = 3958.8;
+  var dLat = (lat2 - lat1) * Math.PI / 180;
+  var dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function clearMarkers() {
+  markers.forEach(function (m) { map.removeLayer(m); });
+  markers = [];
+}
+
+function addMarker(store, coords, index) {
+  var icon = L.divIcon({
+    className: 'store-marker',
+    html: '<div style="width:22px;height:22px;border-radius:50%;background:var(--coral);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+  var marker = L.marker([coords.lat, coords.lng], { icon: icon }).addTo(map);
+  var popupHtml = '<div class="store-popup"><h3>' + store.name + '</h3><p>' + store.address + '</p>' +
+    (store.hours ? '<p>' + store.hours + '</p>' : '') + (store.phone ? '<p>' + store.phone + '</p>' : '') + '</div>';
+  marker.bindPopup(popupHtml);
+  marker.on('click', function () { selectStore(index); });
+  markers.push(marker);
+}
+
+function addSidebarCard(store, index) {
+  var card = document.createElement('div');
+  card.className = 'store-card';
+  card.id = 'card-' + index;
+  card.innerHTML =
+    '<div class="store-name">' + store.name + '</div>' +
+    '<div class="store-address">' + store.address + '</div>' +
+    (store.hours ? '<div class="store-hours">' + store.hours + '</div>' : '') +
+    '<div class="store-distance" id="dist-' + index + '"></div>';
+  card.onclick = function () { selectStore(index); map.panTo([store._lat, store._lng]); map.setZoom(14); };
+  document.getElementById('store-list').appendChild(card);
+}
+
+function selectStore(index) {
+  if (activeCard) activeCard.classList.remove('active');
+  activeCard = document.getElementById('card-' + index);
+  if (activeCard) activeCard.classList.add('active');
+  markers[index].openPopup();
+}
+
+async function geocodeAndRender(storesToRender) {
+  clearMarkers();
+  document.getElementById('store-list').innerHTML = '';
+  document.getElementById('no-results').style.display = 'none';
+  document.getElementById('loading-state').style.display = storesToRender.length ? 'block' : 'none';
+
+  var bounds = [];
+  var rendered = 0;
+
+  for (var i = 0; i < storesToRender.length; i++) {
+    var store = storesToRender[i];
+    var coords = (store.lat && store.lng) ? { lat: store.lat, lng: store.lng } : await geocode(store.address);
+    if (!coords) continue;
+    store._lat = coords.lat;
+    store._lng = coords.lng;
+    rendered++;
+    bounds.push([coords.lat, coords.lng]);
+    addMarker(store, coords, i);
+    addSidebarCard(store, i);
+    // stay comfortably under Nominatim's ~1 req/sec guidance for any uncached lookups
+    if (!(store.lat && store.lng)) await sleep(1100);
+  }
+
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('count').textContent = rendered;
+
+  if (rendered === 0) {
+    document.getElementById('no-results').style.display = 'block';
+  } else if (bounds.length === 1) {
+    map.setView(bounds[0], 13);
+  } else {
+    map.fitBounds(bounds, { padding: [30, 30] });
+  }
+}
+
+function searchByZip() {
+  var zip = document.getElementById('zip-input').value.trim();
+  if (!zip) { geocodeAndRender(STORES); return; }
+
+  geocode(zip, true).then(function (center) {
+    if (!center) { alert('Could not find that zip code.'); return; }
+    var R = 60; // miles radius
+    var nearby = STORES.filter(function (s) {
+      if (!s._lat || !s._lng) return true; // not yet geocoded — include, will resolve on render
+      s._dist = haversine(center.lat, center.lng, s._lat, s._lng);
+      return s._dist <= R;
+    }).sort(function (a, b) { return (a._dist || 0) - (b._dist || 0); });
+
+    geocodeAndRender(nearby).then(function () {
+      nearby.forEach(function (s, i) {
+        var el = document.getElementById('dist-' + i);
+        if (el && s._dist != null) el.textContent = s._dist.toFixed(1) + ' mi away';
+      });
+    });
+  });
+}
+
+document.getElementById('zip-input').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') searchByZip();
+});
+
+// ── Admin: quick local add (browser-only — see note in the panel) ──
+function toggleAdmin() {
+  var panel = document.getElementById('admin-panel');
+  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+
+function addStore() {
+  var name = document.getElementById('f-name').value.trim();
+  var address = document.getElementById('f-address').value.trim();
+  var hours = document.getElementById('f-hours').value.trim();
+  var phone = document.getElementById('f-phone').value.trim();
+  var status = document.getElementById('admin-status');
+
+  if (!name || !address) {
+    status.style.color = 'var(--coral-deep)';
+    status.textContent = 'Name and address are required.';
+    return;
+  }
+
+  var newStore = { name: name, address: address, hours: hours, phone: phone };
+  var local = loadLocalAdditions();
+  local.push(newStore);
+  saveLocalAdditions(local);
+  STORES.push(newStore);
+
+  status.style.color = 'var(--teal)';
+  status.textContent = 'Added — remember to Export + update stores.json to make it permanent.';
+  geocodeAndRender(STORES);
+
+  ['f-name', 'f-address', 'f-hours', 'f-phone'].forEach(function (id) {
+    document.getElementById(id).value = '';
+  });
+  setTimeout(function () { status.textContent = ''; }, 4000);
+}
+
+function exportLocations() {
+  var data = JSON.stringify(STORES.map(function (s) {
+    return { name: s.name, address: s.address, hours: s.hours || '', phone: s.phone || '' };
+  }), null, 2);
+  var blob = new Blob([data], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'stores.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  map = L.map('map', { scrollWheelZoom: false }).setView([39.8283, -98.5795], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18
+  }).addTo(map);
+
+  fetchStores().then(function (data) {
+    STORES = data;
+    geocodeAndRender(STORES);
+  });
+});
+</script>
+</body>
+</html>
