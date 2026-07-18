@@ -228,7 +228,7 @@
       <div id="sidebar-header">Locations (<span id="count">0</span>)</div>
       <div id="store-list"></div>
       <div id="loading-state">Loading locations…</div>
-      <div id="no-results">No stores found in this area.</div>
+      <div id="no-results">Whatcha is coming soon. Check back soon for retail locations.</div>
     </div>
     <div id="map"></div>
   </div>
@@ -495,6 +495,13 @@ document.addEventListener('DOMContentLoaded', function () {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 18
   }).addTo(map);
+
+  // Temporary "coming soon" notice while real store data isn't live yet —
+  // remove this once stores.json has real locations in it.
+  L.popup({ closeButton: false, autoClose: false, closeOnClick: false })
+    .setLatLng([39.8283, -98.5795])
+    .setContent('<div class="store-popup"><h3>Coming soon!</h3><p>Whatcha is coming soon. Check back soon for retail locations.</p></div>')
+    .openOn(map);
 
   fetchStores().then(function (data) {
     STORES = data;
