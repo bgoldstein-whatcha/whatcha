@@ -162,7 +162,7 @@
   <div class="wla-gif-frame">
     <img id="celebrate-gif" src="" alt="A random celebratory GIF" />
   </div>
-  <p class="wla-gif-credit">GIFs via <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>, public domain / CC BY(-SA)</p>
+  <p class="wla-gif-credit">Powered by <a href="https://giphy.com" target="_blank" rel="noopener">GIPHY</a></p>
 
   <div class="wla-actions">
     <button type="button" class="btn" id="shuffle-btn">Gimme another one!</button>
@@ -174,30 +174,60 @@
 <script src="../assets/main.js"></script>
 <script>
 // ════════════════════════════════════════════════
-//  Random gif, self-hosted (no third-party API — an earlier version
-//  called Giphy's public demo key, which turned out to be dead/banned
-//  from years of reuse across the web). Sourced from Wikimedia Commons
-//  under CC0/public-domain/CC-BY(-SA) licenses. Add more filenames here
-//  to widen the pool further.
+//  Random gif via the Giphy API (real API key, created at
+//  developers.giphy.com — the earlier public demo keys for both Giphy
+//  and Tenor turned out to be dead/banned from years of reuse across
+//  the web). Picks a random fun/celebratory tag, then asks Giphy's
+//  /random endpoint for one GIF matching it — this pulls from Giphy's
+//  full library so the pool is effectively limitless and stays fun,
+//  not just whatever handful of files happen to be self-hosted.
+//  Falls back to a small self-hosted pool if the API call fails
+//  (offline, key issue, rate limit).
 // ════════════════════════════════════════════════
-var GIFS = [
-  'fireworks.gif', 'cake.gif', 'horse.gif', 'spinning-dancer.gif',
-  'sleeping-cat.gif', 'floss-dance.gif', 'cat-paws.gif',
-  'dog-wiggle.gif', 'cat-funny.gif', 'thumbsup.gif',
+var GIPHY_API_KEY = 'M43Zr8yNk4MjhwdUSlqQf6e3iCaf2aCz';
+var GIPHY_TAGS = [
+  'excited', 'celebration', 'yasss', 'high five', 'mind blown',
+  'dance party', 'woohoo', 'cheers', 'confetti', 'happy dance',
+  'laughing', 'thumbs up', 'yes', 'fist pump', 'party time'
+];
+// small offline fallback pool if the Giphy request ever fails
+var FALLBACK_GIFS = [
+  'horse.gif', 'spinning-dancer.gif', 'sleeping-cat.gif', 'floss-dance.gif',
+  'cat-paws.gif', 'dog-wiggle.gif', 'cat-funny.gif', 'thumbsup.gif',
   'sticker-exciting.gif', 'sticker-selfie.gif', 'sticker-what.gif',
   'sticker-astronaut.gif', 'sticker-dragon.gif'
 ];
-var lastGif = null;
+var lastTag = null;
+
+function loadFallbackGif() {
+  var img = document.getElementById('celebrate-gif');
+  var pick = FALLBACK_GIFS[Math.floor(Math.random() * FALLBACK_GIFS.length)];
+  img.src = '../assets/images/gifs/' + pick;
+}
 
 function loadRandomGif() {
   var img = document.getElementById('celebrate-gif');
-  var pick = GIFS[Math.floor(Math.random() * GIFS.length)];
-  // avoid showing the same one twice in a row
-  if (GIFS.length > 1) {
-    while (pick === lastGif) { pick = GIFS[Math.floor(Math.random() * GIFS.length)]; }
+  var tag = GIPHY_TAGS[Math.floor(Math.random() * GIPHY_TAGS.length)];
+  // avoid the same tag twice in a row (Giphy still varies the exact gif per tag)
+  if (GIPHY_TAGS.length > 1) {
+    while (tag === lastTag) { tag = GIPHY_TAGS[Math.floor(Math.random() * GIPHY_TAGS.length)]; }
   }
-  lastGif = pick;
-  img.src = '../assets/images/gifs/' + pick;
+  lastTag = tag;
+
+  var url = 'https://api.giphy.com/v1/gifs/random?api_key=' + GIPHY_API_KEY +
+    '&tag=' + encodeURIComponent(tag) + '&rating=g';
+
+  fetch(url).then(function (res) {
+    if (!res.ok) throw new Error('Giphy request failed');
+    return res.json();
+  }).then(function (data) {
+    var images = data && data.data && data.data.images;
+    var gifUrl = images && ((images.downsized && images.downsized.url) || (images.original && images.original.url));
+    if (!gifUrl) throw new Error('No gif in response');
+    img.src = gifUrl;
+  }).catch(function () {
+    loadFallbackGif();
+  });
 }
 
 document.addEventListener('DOMContentLoaded', function () {
