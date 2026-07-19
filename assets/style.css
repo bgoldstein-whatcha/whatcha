@@ -203,6 +203,8 @@ a { color: inherit; text-decoration: none; }
 
 .nav-toggle {
   display: none;
+  position: relative;
+  z-index: 2;
   background: none;
   border: none;
   color: var(--yellow);
@@ -210,6 +212,10 @@ a { color: inherit; text-decoration: none; }
   padding: 0.5rem;
 }
 .nav-toggle svg { width: 28px; height: 28px; }
+.nav-toggle .icon-close { display: none; }
+.nav-toggle[aria-expanded="true"] .icon-menu { display: none; }
+.nav-toggle[aria-expanded="true"] .icon-close { display: block; }
+.nav-toggle[aria-expanded="true"] { color: var(--cream); }
 
 @media (max-width: 780px) {
   .nav-links {
