@@ -1,0 +1,34 @@
+[
+  {
+    "category": "Logos",
+    "items": [
+      { "name": "Wordmark – \"Whatcha\" (Black & White)", "file": "assets/images/logo/wordmark-black.png", "format": "PNG" },
+      { "name": "Wordmark – \"Whatcha\" (Black & Yellow)", "file": "assets/images/logo/wordmark-yellow.png", "format": "PNG" },
+      { "name": "Full Lockup – \"Whatcha Drinking?\" (Black & Yellow)", "file": "assets/images/logo/whatcha-wordmark.png", "format": "PNG" },
+      { "name": "Full Lockup – \"Whatcha Drinking?\" (Black & White)", "file": "assets/images/logo/whatcha-drinking-wordmark-black.png", "format": "PNG" },
+      { "name": "Logo Badge (Starburst + Wordmark)", "file": "assets/images/logo/logo-badge-combined.png", "format": "PNG" },
+      { "name": "\"W\" Icon / Favicon", "file": "assets/images/favicon.png", "format": "PNG" }
+    ]
+  },
+  {
+    "category": "Flavor Lockups",
+    "items": [
+      { "name": "Tropical Punch Lockup", "file": "assets/images/logo/lockup-tropical-punch.png", "format": "PNG" },
+      { "name": "Peach Lemonade Lockup", "file": "assets/images/logo/lockup-peach-lemonade.png", "format": "PNG" }
+    ]
+  },
+  {
+    "category": "Product Photography",
+    "items": [
+      { "name": "Spiked Tropical Punch Pouch", "file": "assets/images/pouches/tropical-punch.png", "format": "PNG" },
+      { "name": "Spiked Peach Lemonade Pouch", "file": "assets/images/pouches/peach-lemonade.png", "format": "PNG" }
+    ]
+  },
+  {
+    "category": "Icons & Illustrations",
+    "items": [
+      { "name": "Fruit Group – Tropical Punch", "file": "assets/images/fruit/fruit-group-tropical-punch.png", "format": "PNG" },
+      { "name": "Fruit Group – Peach Lemonade", "file": "assets/images/fruit/fruit-group-peach-lemonade.png", "format": "PNG" }
+    ]
+  }
+]
