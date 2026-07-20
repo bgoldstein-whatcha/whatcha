@@ -47,14 +47,21 @@
     gap: 1rem;
     flex-wrap: wrap;
   }
-  .locator-toolbar__title { display: flex; flex-direction: column; gap: 0.2rem; }
   .locator-back {
     font-family: var(--font-ui);
     letter-spacing: 0.03em;
-    font-size: 0.8rem;
-    color: var(--yellow);
+    color: var(--navy);
+    background: var(--yellow);
+    border: 3px solid var(--navy);
+    border-radius: 999px;
+    padding: 0.5rem 1.1rem;
+    font-size: 0.85rem;
+    position: fixed;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    z-index: 5;
+    box-shadow: var(--shadow-hard-sm);
   }
-  .locator-back:hover { text-decoration: underline; }
   .locator-toolbar h1 {
     color: var(--cream);
     font-size: var(--fs-h3);
@@ -83,6 +90,7 @@
     border-right: 4px solid var(--navy);
     display: flex;
     flex-direction: column;
+    padding-bottom: 4.5rem;
   }
   #sidebar-header {
     padding: 1rem 1.1rem;
@@ -224,10 +232,7 @@
 
 <main>
   <div class="locator-toolbar">
-    <div class="locator-toolbar__title">
-      <a class="locator-back" href="../index.html">&larr; Back to whatchadrinking.com</a>
-      <h1>Find Whatcha near you</h1>
-    </div>
+    <h1>Find Whatcha near you</h1>
     <div class="locator-toolbar__search">
       <input id="zip-input" type="text" placeholder="Enter zip code" maxlength="10" />
       <button id="find-btn" class="btn" onclick="searchByZip()">Search</button>
@@ -244,6 +249,8 @@
     <div id="map"></div>
   </div>
 </main>
+
+<a class="locator-back" href="../index.html">&larr; Back</a>
 
 <button id="admin-toggle" onclick="toggleAdmin()" title="Add Location">+</button>
 
