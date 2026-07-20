@@ -47,6 +47,14 @@
     gap: 1rem;
     flex-wrap: wrap;
   }
+  .locator-toolbar__title { display: flex; flex-direction: column; gap: 0.2rem; }
+  .locator-back {
+    font-family: var(--font-ui);
+    letter-spacing: 0.03em;
+    font-size: 0.8rem;
+    color: var(--yellow);
+  }
+  .locator-back:hover { text-decoration: underline; }
   .locator-toolbar h1 {
     color: var(--cream);
     font-size: var(--fs-h3);
@@ -216,7 +224,10 @@
 
 <main>
   <div class="locator-toolbar">
-    <h1>Find Whatcha near you</h1>
+    <div class="locator-toolbar__title">
+      <a class="locator-back" href="../index.html">&larr; Back to whatchadrinking.com</a>
+      <h1>Find Whatcha near you</h1>
+    </div>
     <div class="locator-toolbar__search">
       <input id="zip-input" type="text" placeholder="Enter zip code" maxlength="10" />
       <button id="find-btn" class="btn" onclick="searchByZip()">Search</button>
