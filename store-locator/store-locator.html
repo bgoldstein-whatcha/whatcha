@@ -216,7 +216,7 @@
 
 <header class="site-header">
   <div class="container">
-    <a href="../index.html" class="brand-mark" aria-label="Whatcha Drinking — home">
+    <a href="../index.html" class="brand-mark" aria-label="Whatcha Drinking homepage">
       <img src="../assets/images/logo/whatcha-wordmark.png" alt="Whatcha Drinking?" width="180" height="70" />
     </a>
     <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
@@ -484,7 +484,7 @@ function addStore() {
   STORES.push(newStore);
 
   status.style.color = 'var(--teal)';
-  status.textContent = 'Added — remember to Export + update stores.json to make it permanent.';
+  status.textContent = 'Added. Remember to Export + update stores.json to make it permanent.';
   geocodeAndRender(STORES);
 
   ['f-name', 'f-address', 'f-hours', 'f-phone'].forEach(function (id) {
