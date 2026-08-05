@@ -19,42 +19,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="../assets/style.css" />
 <style>
-  body { overflow-x: hidden; background: var(--navy); }
-
-  .wla-wrap {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: clamp(1.5rem, 5vw, 4rem);
-    position: relative;
-    overflow: hidden;
-  }
+  .wla-hero { padding-block: clamp(2.5rem, 6vw, 4rem); position: relative; overflow: hidden; }
 
   .wla-headline {
     font-family: var(--font-display);
     font-weight: 800;
     color: var(--yellow);
-    text-shadow: 6px 6px 0 var(--coral);
-    font-size: clamp(2.75rem, 9vw, 7rem);
+    text-shadow: 0.065em 0.065em 0 var(--navy);
+    font-size: clamp(2.5rem, 7vw, 5rem);
     line-height: 0.95;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
     position: relative;
     z-index: 2;
   }
 
   .wla-sub {
     font-family: var(--font-ui);
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
+    font-weight: 700;
     color: var(--navy);
-    background: var(--cream);
-    border: 4px solid var(--navy);
-    border-radius: 999px;
-    box-shadow: var(--shadow-hard);
-    padding: 0.5rem 1.5rem;
-    font-size: clamp(1rem, 2.2vw, 1.3rem);
+    font-size: clamp(1.1rem, 2.6vw, 1.35rem);
     margin-bottom: 2.5rem;
     position: relative;
     z-index: 2;
@@ -62,11 +46,12 @@
 
   .wla-gif-frame {
     background: var(--cream);
-    border: 6px solid var(--yellow);
+    border: 4px solid var(--navy);
     border-radius: var(--radius);
     box-shadow: var(--shadow-hard);
     padding: 0.75rem;
     max-width: min(90vw, 480px);
+    margin-inline: auto;
     transform: rotate(-1deg);
     position: relative;
     z-index: 2;
@@ -81,8 +66,8 @@
   }
   .wla-gif-credit {
     font-family: "Nunito Sans", sans-serif;
-    color: var(--sky-pale);
-    opacity: 0.6;
+    color: var(--ink);
+    opacity: 0.55;
     margin-top: 0.75rem;
     font-size: 0.75rem;
   }
@@ -98,10 +83,23 @@
     z-index: 2;
   }
 
+  .wla-home-link {
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  .wla-home-link a {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--navy);
+    text-decoration: underline;
+  }
+
   .wla-pouch {
     position: absolute;
-    width: clamp(80px, 11vw, 140px);
-    filter: drop-shadow(4px 4px 0 rgba(18,18,58,0.5));
+    width: clamp(70px, 9vw, 120px);
+    filter: drop-shadow(4px 4px 0 rgba(18,18,58,0.25));
     z-index: 1;
     animation: sway 5s ease-in-out infinite;
   }
@@ -109,26 +107,25 @@
     0%, 100% { transform: rotate(-5deg); }
     50% { transform: rotate(5deg); }
   }
-  .wla-pouch--1 { top: 8%; left: 6%; }
-  .wla-pouch--2 { bottom: 8%; right: 6%; animation-delay: -2.5s; }
-
-  .wla-back {
-    font-family: var(--font-ui);
-    color: var(--navy);
-    background: var(--yellow);
-    border: 3px solid var(--navy);
-    border-radius: 999px;
-    padding: 0.5rem 1.1rem;
-    font-size: 0.85rem;
-    position: fixed;
-    bottom: 1.25rem;
-    left: 1.25rem;
-    z-index: 5;
-    box-shadow: var(--shadow-hard-sm);
-  }
+  .wla-pouch--1 { top: 4%; left: 6%; }
+  .wla-pouch--2 { bottom: 4%; right: 6%; animation-delay: -2.5s; }
 
   @media (max-width: 700px) {
-    .wla-pouch { display: none; }
+    .sparkle { display: none; }
+    .wla-pouch-row {
+      display: flex;
+      justify-content: center;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+      position: relative;
+      z-index: 2;
+    }
+    .wla-pouch-row .wla-pouch {
+      position: static;
+      width: clamp(52px, 16vw, 80px);
+      opacity: 1;
+      filter: drop-shadow(3px 3px 0 rgba(18,18,58,0.25));
+    }
   }
 </style>
 </head>
@@ -147,50 +144,103 @@
   </div>
 </div>
 
-<div class="wla-wrap sparkle-field">
-  <span class="sparkle" aria-hidden="true" style="--sparkle-size:22px; --sparkle-color:var(--yellow); top:10%; left:14%;"></span>
-  <span class="sparkle" aria-hidden="true" style="--sparkle-size:16px; --sparkle-color:var(--sky); top:16%; right:16%;"></span>
-  <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--teal); bottom:14%; left:18%;"></span>
-  <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--coral); bottom:20%; right:20%;"></span>
-
-  <img class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.png" alt="" aria-hidden="true" />
-  <img class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.png" alt="" aria-hidden="true" />
-
-  <h1 class="wla-headline">WHATCHA<br>LOOKIN AT?!</h1>
-  <p class="wla-sub">you found the secret page. Squeeze the Day!</p>
-
-  <div class="wla-gif-frame">
-    <img id="celebrate-gif" src="" alt="A random celebratory GIF" />
+<header class="site-header">
+  <div class="container">
+    <a href="../index.html" class="brand-mark" aria-label="Whatcha Drinking homepage">
+      <img src="../assets/images/logo/whatcha-wordmark.png" alt="Whatcha Drinking?" width="180" height="70" />
+    </a>
+    <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
+      <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
+    </button>
+    <ul class="nav-links" data-nav-links>
+      <li><a href="../about.html">About</a></li>
+      <li><a href="../index.html#flavors">Flavors</a></li>
+      <li><a href="../faq.html">FAQs</a></li>
+      <li><a href="../index.html#contact">Contact</a></li>
+    </ul>
   </div>
-  <p class="wla-gif-credit">Powered by <a href="https://giphy.com" target="_blank" rel="noopener">GIPHY</a></p>
+</header>
 
-  <div class="wla-actions">
-    <button type="button" class="btn" id="shuffle-btn">Gimme another one!</button>
+<main>
+  <section class="wla-hero sparkle-field text-center">
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:22px; --sparkle-color:var(--yellow); top:10%; left:14%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:16px; --sparkle-color:var(--sky); top:16%; right:16%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--teal); bottom:14%; left:18%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--coral); bottom:20%; right:20%;"></span>
+
+    <div class="wla-pouch-row">
+      <img class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.png" alt="" aria-hidden="true" />
+      <img class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.png" alt="" aria-hidden="true" />
+    </div>
+
+    <div class="container">
+      <h1 class="wla-headline">WHATCHA<br>LOOKIN AT?!</h1>
+      <p class="wla-sub">Cheers to what YOU'RE drinking!</p>
+
+      <div class="wla-gif-frame">
+        <img id="celebrate-gif" src="" alt="A random celebratory GIF" />
+      </div>
+      <p class="wla-gif-credit">Powered by <a href="https://giphy.com" target="_blank" rel="noopener">GIPHY</a></p>
+
+      <div class="wla-actions">
+        <button type="button" class="btn" id="shuffle-btn">Gimme another one!</button>
+      </div>
+      <p class="wla-home-link"><a href="../index.html">&larr; Back to whatchadrinking.com</a></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer" id="contact">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <h4>Explore</h4>
+        <ul>
+          <li><a href="../index.html#flavors">Flavors</a></li>
+          <li><a href="../store-locator/store-locator.html">Find in store</a></li>
+          <li><a href="../about.html">About us</a></li>
+          <li><a href="../faq.html">FAQs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Work with us</h4>
+        <ul>
+          <li><a href="../join-the-team.html">Join the team</a></li>
+          <li><a href="../sell-whatcha.html">Wanna sell Whatcha?</a></li>
+          <li><a href="../brand-assets.html">Brand Assets</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contact Us</h4>
+        <ul>
+          <li><a href="mailto:hello@whatchadrinking.com">hello@whatchadrinking.com</a></li>
+          <li><a href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener">@drinkwhatcha</a></li>
+        </ul>
+        <div class="footer-social">
+          <a href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener" aria-label="Whatcha on Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.3"/><circle cx="17.3" cy="6.7" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+          <a href="https://www.tiktok.com/@drinkwhatcha" target="_blank" rel="noopener" aria-label="Whatcha on TikTok">
+            <svg viewBox="0 0 24 24" fill="currentColor"><g transform="translate(2.5,2.5) scale(0.79167)"><path d="M12.53.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.42-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></g></svg>
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 Whatcha Drinking, Inc., Chicago, IL. All Rights Reserved.</p>
+      <p>Whatcha is made with vodka and natural flavors. 10% Alc./Vol. Drink responsibly. Must be 21+.</p>
+    </div>
   </div>
-</div>
-
-<a class="wla-back" href="../index.html">&larr; back to whatchadrinking.com</a>
+</footer>
 
 <script src="../assets/main.js"></script>
 <script>
-// ════════════════════════════════════════════════
-//  Random gif via the Giphy API (real API key, created at
-//  developers.giphy.com — the earlier public demo keys for both Giphy
-//  and Tenor turned out to be dead/banned from years of reuse across
-//  the web). Picks a random fun/celebratory tag, then asks Giphy's
-//  /random endpoint for one GIF matching it — this pulls from Giphy's
-//  full library so the pool is effectively limitless and stays fun,
-//  not just whatever handful of files happen to be self-hosted.
-//  Falls back to a small self-hosted pool if the API call fails
-//  (offline, key issue, rate limit).
-// ════════════════════════════════════════════════
 var GIPHY_API_KEY = 'M43Zr8yNk4MjhwdUSlqQf6e3iCaf2aCz';
 var GIPHY_TAGS = [
   'excited', 'celebration', 'yasss', 'high five', 'mind blown',
   'dance party', 'woohoo', 'cheers', 'confetti', 'happy dance',
   'laughing', 'thumbs up', 'yes', 'fist pump', 'party time'
 ];
-// small offline fallback pool if the Giphy request ever fails
 var FALLBACK_GIFS = [
   'horse.gif', 'spinning-dancer.gif', 'sleeping-cat.gif', 'floss-dance.gif',
   'cat-paws.gif', 'dog-wiggle.gif', 'cat-funny.gif', 'thumbsup.gif',
@@ -208,7 +258,6 @@ function loadFallbackGif() {
 function loadRandomGif() {
   var img = document.getElementById('celebrate-gif');
   var tag = GIPHY_TAGS[Math.floor(Math.random() * GIPHY_TAGS.length)];
-  // avoid the same tag twice in a row (Giphy still varies the exact gif per tag)
   if (GIPHY_TAGS.length > 1) {
     while (tag === lastTag) { tag = GIPHY_TAGS[Math.floor(Math.random() * GIPHY_TAGS.length)]; }
   }
