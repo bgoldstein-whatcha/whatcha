@@ -32,6 +32,27 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="assets/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  .claims { background: var(--navy); border-block: 4px solid var(--navy-deep); padding-block: 1rem; }
+  .claims__row { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(1.1rem, 4vw, 3rem); }
+  .claims__item { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-ui); font-weight: 700; letter-spacing: 0.03em; color: var(--cream); font-size: clamp(1.05rem, 2vw, 1.35rem); white-space: nowrap; }
+  .claims__mark { color: var(--yellow); font-size: 1.15em; }
+
+  .marquee.marquee--social {
+    background: var(--navy);
+    border-color: var(--navy-deep);
+    padding-block: 1.15rem;
+    display: block;
+    text-decoration: none;
+  }
+  .marquee--social .marquee__word {
+    color: var(--yellow);
+    font-size: clamp(1.2rem, 0.9vw + 1rem, 1.6rem);
+    letter-spacing: 0.04em;
+  }
+  .marquee--social .marquee__star { color: var(--yellow); font-size: clamp(1rem, 0.6vw + 0.8rem, 1.3rem); }
+  .marquee--social:hover .marquee__word { color: var(--cream); }
+</style>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -152,6 +173,15 @@
     </div>
   </section>
 
+  <section class="claims" aria-label="Whatcha at a glance">
+    <div class="container claims__row">
+      <span class="claims__item"><span class="claims__mark">✓</span>10% ALC/VOL</span>
+      <span class="claims__item"><span class="claims__mark">✓</span>Real Vodka</span>
+      <span class="claims__item"><span class="claims__mark">✓</span>Gluten Free</span>
+      <span class="claims__item"><span class="claims__mark">✓</span>Attached Straw</span>
+    </div>
+  </section>
+
   <section id="flavors" class="flavors section-pad sparkle-field">
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--coral); top:6%; right:8%;"></span>
     <div class="container">
@@ -228,11 +258,17 @@
     </div>
   </section>
 
-  <div class="section-divider" aria-hidden="true"></div>
+  <a class="marquee marquee--social" href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener" aria-label="Follow Whatcha on Instagram, @drinkwhatcha">
+    <div class="marquee__track" data-marquee>
+      <span class="marquee__star">✦</span>
+      <span class="marquee__word">Follow @drinkwhatcha</span>
+    </div>
+  </a>
+
   <section class="signup section-pad" id="signup">
     <div class="signup__bg" aria-hidden="true"></div>
     <div class="container text-center signup__inner">
-      <h2>Whatcha Waiting For?</h2>
+      <h2>Whatcha waiting for?</h2>
       <p class="fs-body-lg">Get first dibs on new flavors and where we're landing next.</p>
       <form class="signup__form" data-form data-form-endpoint="https://formspree.io/f/mgogklyq" aria-label="Email signup">
         <label for="signup-email" class="visually-hidden">Enter your email</label>
