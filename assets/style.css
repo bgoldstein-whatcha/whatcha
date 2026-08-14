@@ -359,6 +359,13 @@ section { position: relative; }
   font-size: var(--fs-small);
   color: rgba(255,255,255,0.75);
 }
+.footer-hq-login {
+  color: rgba(255,255,255,0.55);
+  font-size: var(--fs-small);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.footer-hq-login:hover { color: var(--yellow); }
 
 /* ---------- form fields ---------- */
 .field { display: flex; flex-direction: column; gap: 0.4rem; text-align: left; }
