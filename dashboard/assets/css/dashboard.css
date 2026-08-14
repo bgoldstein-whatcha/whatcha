@@ -132,6 +132,7 @@ input, select, textarea { font-family: var(--font-body); font-size: 15px; }
 .nav-item:hover { background: rgba(255,255,255,.09); color: #fff; }
 .nav-item.active { background: var(--yellow); color: var(--ink); border-color: var(--ink); }
 .nav-item .ico { width: 18px; text-align: center; font-size: 16px; }
+.sidebar__exit { margin-bottom: 10px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.12); }
 .sidebar__foot { margin-top: auto; font-size: 11px; color: rgba(255,255,255,.55); padding: 10px 8px; }
 .sidebar__foot button { background: none; border: none; color: #cfe; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; }
 

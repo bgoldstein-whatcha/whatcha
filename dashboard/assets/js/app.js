@@ -530,7 +530,7 @@ const App = {
       <div class="btn-row" style="margin-bottom:16px">
         <button class="btn btn--primary" onclick="App.accountModal()">＋ New account</button>
         <span class="spacer" style="flex:1"></span>
-        <button class="btn btn--ghost" onclick="App.exportStores()">⬇ Export stores (CSV)</button>
+        <button class="btn btn--ghost" onclick="App.exportStoresModal()">⬇ Export stores (CSV)</button>
         <button class="btn btn--coral" onclick="App.locatorExportModal()">🗺️ For website locator</button>
       </div>
 
@@ -1324,23 +1324,26 @@ const App = {
   csvRows(header, rows) { return [header.map((h) => this.csvCell(h)).join(","), ...rows.map((r) => r.map((c) => this.csvCell(c)).join(","))].join("\n"); },
   stamp() { return new Date().toISOString().slice(0, 10); },
 
-  // Orders within an optional [from, to] date window (inclusive).
-  salesInRange(from, to) {
+  // Orders within an optional [from, to] date window (inclusive), optionally
+  // narrowed to specific states and/or distributors (empty/omitted = all).
+  salesInRange(from, to, states, distIds) {
     return DB.pricedOrders()
       .filter((o) => (!from || o.date >= from) && (!to || o.date <= to))
+      .filter((o) => !states || !states.length || states.includes(o.state))
+      .filter((o) => !distIds || !distIds.length || distIds.includes(o.distributor_id))
       .sort((a, b) => a.date.localeCompare(b.date));
   },
   // Every order in range, one row per line item — the full sales export.
-  exportAllSales(from, to) {
+  exportAllSales(from, to, states, distIds) {
     const rows = [];
-    this.salesInRange(from, to).forEach((o) => {
+    this.salesInRange(from, to, states, distIds).forEach((o) => {
       const store = DB.store(o.store_id); const dist = DB.distributor(o.distributor_id);
       o.lines.forEach((l) => {
         const prod = DB.product(l.product_id);
         rows.push([o.date, o.store_name, store ? store.city : "", o.state, dist ? dist.name : "", l.product_name, prod ? prod.sku : "", l.cases, l.case_price.toFixed(2), l.line_total.toFixed(2), o.id]);
       });
     });
-    if (!rows.length) return this.toast("No sales in that date range", "err");
+    if (!rows.length) return this.toast("No sales match those filters", "err");
     const tag = from || to ? `${from || "start"}_to_${to || this.stamp()}` : this.stamp();
     this.saveFile(`whatcha_sales_${tag}.csv`,
       this.csvRows(["Date", "Store", "City", "State", "Distributor", "Product", "SKU", "Cases", "Case Price", "Line Total", "Order ID"], rows), "text/csv");
@@ -1354,15 +1357,21 @@ const App = {
     const maxD = this.stamp();
     const monthStart = maxD.slice(0, 8) + "01";
     const d30 = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+    const allStates = [...new Set(DB.stores().map((s) => s.state))].sort();
+    const dists = DB.distributors();
+
+    const selectedStates = () => $$("#exp-states button.active").map((b) => b.dataset.v);
+    const selectedDists = () => $$("#exp-dists button.active").map((b) => b.dataset.v);
 
     const summary = () => {
       const from = $("#exp-from").value, to = $("#exp-to").value;
-      const rows = this.salesInRange(from, to);
+      const rows = this.salesInRange(from, to, selectedStates(), selectedDists());
       const cases = rows.reduce((a, o) => a + o.cases, 0);
       const total = rows.reduce((a, o) => a + o.total, 0);
       $("#exp-summary").innerHTML = `<strong>${rows.length}</strong> orders · <strong>${cases}</strong> cases · <strong>${fmtMoney2(total)}</strong>`;
     };
     const preset = (from, to) => { $("#exp-from").value = from; $("#exp-to").value = to; summary(); };
+    const togglePill = (el) => { el.classList.toggle("active"); summary(); };
 
     this.modal({
       title: "Export sales",
@@ -1377,23 +1386,65 @@ const App = {
           <div class="field"><label>From</label><input type="date" id="exp-from" value="${minD}" min="${minD}" max="${maxD}" onchange="App._expSummary()"></div>
           <div class="field"><label>To</label><input type="date" id="exp-to" value="${maxD}" min="${minD}" max="${maxD}" onchange="App._expSummary()"></div>
         </div>
+        ${allStates.length ? `<div class="field"><label>States <span class="muted" style="font-weight:normal">· none selected = every state</span></label>
+          <div class="pill-filter" id="exp-states">${allStates.map((st) => `<button type="button" data-v="${st}" onclick="App._expToggle(this)">${st}</button>`).join("")}</div>
+        </div>` : ""}
+        ${dists.length ? `<div class="field"><label>Distributors <span class="muted" style="font-weight:normal">· none selected = every distributor</span></label>
+          <div class="pill-filter" id="exp-dists">${dists.map((d) => `<button type="button" data-v="${d.id}" onclick="App._expToggle(this)">${esc(d.name)}</button>`).join("")}</div>
+        </div>` : ""}
         <div class="panel" style="box-shadow:none;margin:0"><div id="exp-summary" class="muted">—</div></div>`,
-      onOpen: () => { this._expSummary = summary; this._expPreset = (k) => { if (k === "all") preset(minD, maxD); else if (k === "month") preset(monthStart, maxD); else preset(d30, maxD); }; summary(); },
+      onOpen: () => {
+        this._expSummary = summary;
+        this._expPreset = (k) => { if (k === "all") preset(minD, maxD); else if (k === "month") preset(monthStart, maxD); else preset(d30, maxD); };
+        this._expToggle = togglePill;
+        summary();
+      },
       saveLabel: "⬇ Download CSV",
-      onSave: () => { this.exportAllSales($("#exp-from").value, $("#exp-to").value); return true; },
+      onSave: () => { this.exportAllSales($("#exp-from").value, $("#exp-to").value, selectedStates(), selectedDists()); return true; },
     });
   },
 
   // Every account/store — the full store list with geography + status.
-  exportStores() {
-    const rows = DB.stores().map((s) => {
-      const d = DB.distributor(s.distributor_id); const st = DB.storeStats(s.id);
-      return [s.name, s.type || "", s.address || "", s.city || "", s.state, s.status, d ? d.name : "", s.contact_name || "", s.phone || "", s.email || "", st.count, st.cases, st.revenue.toFixed(2), s.created_at || "", (s.notes || "").replace(/\n/g, " ")];
-    });
-    if (!rows.length) return this.toast("No accounts to export", "err");
+  // Optionally narrowed to specific states and/or distributors.
+  exportStores(states, distIds) {
+    const rows = DB.stores()
+      .filter((s) => !states || !states.length || states.includes(s.state))
+      .filter((s) => !distIds || !distIds.length || distIds.includes(s.distributor_id))
+      .map((s) => {
+        const d = DB.distributor(s.distributor_id); const st = DB.storeStats(s.id);
+        return [s.name, s.type || "", s.address || "", s.city || "", s.state, s.status, d ? d.name : "", s.contact_name || "", s.phone || "", s.email || "", st.count, st.cases, st.revenue.toFixed(2), s.created_at || "", (s.notes || "").replace(/\n/g, " ")];
+      });
+    if (!rows.length) return this.toast("No accounts match those filters", "err");
     this.saveFile(`whatcha_stores_${this.stamp()}.csv`,
       this.csvRows(["Store", "Type", "Address", "City", "State", "Status", "Distributor", "Contact", "Phone", "Email", "Orders", "Cases", "Revenue", "Added", "Notes"], rows), "text/csv");
     this.toast(`Exported ${rows.length} accounts`);
+  },
+  exportStoresModal() {
+    const allStates = [...new Set(DB.stores().map((s) => s.state))].sort();
+    const dists = DB.distributors();
+    const selectedStates = () => $$("#exps-states button.active").map((b) => b.dataset.v);
+    const selectedDists = () => $$("#exps-dists button.active").map((b) => b.dataset.v);
+    const matchCount = () => DB.stores()
+      .filter((s) => !selectedStates().length || selectedStates().includes(s.state))
+      .filter((s) => !selectedDists().length || selectedDists().includes(s.distributor_id)).length;
+    const summary = () => { const n = matchCount(); $("#exps-summary").innerHTML = `<strong>${n}</strong> account${n === 1 ? "" : "s"} will be exported`; };
+    const togglePill = (el) => { el.classList.toggle("active"); summary(); };
+
+    this.modal({
+      title: "Export accounts",
+      bodyHTML: `
+        <p style="margin-top:0" class="muted">Leave everything unselected to export every account, or narrow it down to specific states or distributors.</p>
+        ${allStates.length ? `<div class="field"><label>States <span class="muted" style="font-weight:normal">· none selected = every state</span></label>
+          <div class="pill-filter" id="exps-states">${allStates.map((st) => `<button type="button" data-v="${st}" onclick="App._expsToggle(this)">${st}</button>`).join("")}</div>
+        </div>` : ""}
+        ${dists.length ? `<div class="field"><label>Distributors <span class="muted" style="font-weight:normal">· none selected = every distributor</span></label>
+          <div class="pill-filter" id="exps-dists">${dists.map((d) => `<button type="button" data-v="${d.id}" onclick="App._expsToggle(this)">${esc(d.name)}</button>`).join("")}</div>
+        </div>` : ""}
+        <div class="panel" style="box-shadow:none;margin:0"><div id="exps-summary" class="muted">—</div></div>`,
+      onOpen: () => { this._expsToggle = togglePill; summary(); },
+      saveLabel: "⬇ Download CSV",
+      onSave: () => { this.exportStores(selectedStates(), selectedDists()); return true; },
+    });
   },
 
   // Website store-locator feed: matches store-locator/stores.json exactly
@@ -1557,7 +1608,7 @@ const App = {
         <p class="muted" style="margin-top:0">Share these with distributors, your accountant, or your website.</p>
         <div class="btn-row">
           <button class="btn btn--coral" onclick="App.exportSalesModal()">⬇ Sales by date (CSV)</button>
-          <button class="btn btn--ghost" onclick="App.exportStores()">⬇ All stores (CSV)</button>
+          <button class="btn btn--ghost" onclick="App.exportStoresModal()">⬇ All stores (CSV)</button>
           <button class="btn btn--ghost" onclick="App.locatorExportModal()">🗺️ Website locator (stores.json)</button>
         </div>
       </div>
