@@ -129,68 +129,19 @@
   .store-popup h3 { font-family: var(--font-ui); font-size: 0.95rem; color: var(--navy); margin-bottom: 0.2rem; }
   .store-popup p { font-size: 0.82rem; color: var(--ink); margin: 0.1rem 0; }
 
-  /* ---------- admin panel ---------- */
-  #admin-toggle {
-    display: none;
+  /* subtle internal HQ login link, bottom-right (mirrors the Back button) */
+  .locator-hq-login {
     position: fixed;
-    bottom: 1.25rem;
+    bottom: 1.4rem;
     right: 1.25rem;
-    background: var(--coral);
-    color: var(--cream);
-    border: 3px solid var(--navy);
-    border-radius: 50%;
-    width: 48px;
-    height: 48px;
-    font-size: 1.4rem;
-    font-family: var(--font-ui);
-    cursor: pointer;
-    z-index: 1000;
-    box-shadow: var(--shadow-hard);
-  }
-  #admin-panel {
-    position: fixed;
-    bottom: 5.5rem;
-    right: 1.25rem;
-    background: var(--cream);
-    border: 3px solid var(--navy);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    padding: 1.25rem;
-    width: 320px;
-    max-width: calc(100vw - 2.5rem);
-    z-index: 1000;
-    display: none;
-  }
-  #admin-panel h2 { font-size: 1rem; color: var(--navy); margin-bottom: 0.4rem; }
-  #admin-panel .admin-note { font-size: 0.78rem; color: var(--ink); opacity: 0.75; margin-bottom: 0.9rem; line-height: 1.4; }
-  .field-group { margin-bottom: 0.7rem; }
-  .field-group label { display: block; font-size: 0.78rem; color: var(--ink); margin-bottom: 0.25rem; font-weight: 600; }
-  .field-group input {
-    width: 100%;
-    padding: 0.55rem 0.7rem;
-    border: 2px solid var(--sky-pale);
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    font-family: "Nunito Sans", sans-serif;
-    outline: none;
-  }
-  .field-group input:focus { border-color: var(--teal); }
-  #add-store-btn { width: 100%; margin-top: 0.3rem; }
-  #admin-status { font-size: 0.78rem; margin-top: 0.6rem; text-align: center; min-height: 1rem; }
-  #export-btn {
-    width: 100%;
-    padding: 0.6rem;
-    background: var(--sky-pale);
+    z-index: 5;
     color: var(--navy);
-    border: 2px solid var(--navy);
-    border-radius: var(--radius-sm);
+    opacity: 0.5;
     font-family: var(--font-ui);
-    font-size: 0.82rem;
-    cursor: pointer;
-    margin-top: 0.6rem;
+    letter-spacing: 0.02em;
+    font-size: 0.8rem;
   }
-  #export-btn:hover { background: var(--sky); }
-  .admin-divider { border: none; border-top: 2px solid var(--sky-pale); margin: 0.9rem 0; }
+  .locator-hq-login:hover { opacity: 1; color: var(--coral-deep); }
 
   @media (max-width: 700px) {
     #locator-body { flex-direction: column; }
@@ -252,33 +203,7 @@
 </main>
 
 <a class="locator-back" href="../index.html">&larr; Back</a>
-
-<button id="admin-toggle" onclick="toggleAdmin()" title="Add Location">+</button>
-
-<div id="admin-panel">
-  <h2>Add store location</h2>
-  <p class="admin-note">This adds a store to your browser only, for testing. To make it permanent for every visitor, click Export below, then paste the result into <code>store-locator/stores.json</code> and redeploy the site.</p>
-  <div class="field-group">
-    <label>Store name *</label>
-    <input id="f-name" type="text" placeholder="e.g. Whole Foods Market" />
-  </div>
-  <div class="field-group">
-    <label>Address *</label>
-    <input id="f-address" type="text" placeholder="123 Main St, City, ST 00000" />
-  </div>
-  <div class="field-group">
-    <label>Hours (optional)</label>
-    <input id="f-hours" type="text" placeholder="Mon–Sun 8am–10pm" />
-  </div>
-  <div class="field-group">
-    <label>Phone (optional)</label>
-    <input id="f-phone" type="text" placeholder="(555) 123-4567" />
-  </div>
-  <button id="add-store-btn" class="btn" onclick="addStore()">Add location</button>
-  <div id="admin-status"></div>
-  <hr class="admin-divider" />
-  <button id="export-btn" onclick="exportLocations()">Export locations (JSON)</button>
-</div>
+<a class="footer-hq-login locator-hq-login" href="/dashboard">HQ Login</a>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../assets/main.js"></script>
@@ -290,7 +215,7 @@
 //  repeat visits don't re-geocode the same address.
 // ════════════════════════════════════════════════
 var STORES = [];
-var map, tileLayer, markers = [], infoPopups = [], activeCard = null;
+var map, tileLayer, markers = [], infoPopups = [], activeCard = null, comingSoonPopup = null;
 var GEOCODE_CACHE_KEY = 'whatchaGeocodeCache';
 
 function loadGeocodeCache() {
@@ -299,6 +224,11 @@ function loadGeocodeCache() {
 }
 function saveGeocodeCache(cache) {
   localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(cache));
+}
+function isGeocodeCached(address) {
+  if (!address) return false;
+  var cache = loadGeocodeCache();
+  return !!(cache[address] || cache[address + '|us']);
 }
 
 function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
@@ -322,21 +252,25 @@ function geocode(address, usOnly) {
   }).catch(function () { return null; });
 }
 
-function loadLocalAdditions() {
-  try { return JSON.parse(localStorage.getItem('whatchaLocalStores')) || []; }
-  catch (e) { return []; }
-}
-function saveLocalAdditions(list) {
-  localStorage.setItem('whatchaLocalStores', JSON.stringify(list));
-}
+var SUPABASE_URL = 'https://ivvoyzehxpdqtqmfsoxb.supabase.co';
+// Publishable (public) key — safe in the browser; the view only exposes
+// name + address of active stores, and RLS protects everything else.
+var SUPABASE_KEY = 'sb_publishable_-_LLFYYSC5ctBmDL27gtdQ_P9343TDy';
 
 function fetchStores() {
-  return fetch('stores.json').then(function (res) {
-    if (!res.ok) throw new Error('no stores.json');
-    return res.json();
-  }).catch(function () { return []; }).then(function (fromFile) {
-    return fromFile.concat(loadLocalAdditions());
-  });
+  return fetch(SUPABASE_URL + '/rest/v1/public_map_stores?select=name,address,city,state', {
+    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+  })
+    .then(function (res) { if (!res.ok) throw new Error('map feed ' + res.status); return res.json(); })
+    .then(function (rows) {
+      return (rows || [])
+        .filter(function (r) { return r.name && r.address; })
+        .map(function (r) { return { name: r.name, address: r.address }; });
+    })
+    .catch(function (e) {
+      console.warn('Live store feed unavailable, falling back to stores.json', e);
+      return fetch('stores.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+    });
 }
 
 function haversine(lat1, lng1, lat2, lng2) {
@@ -388,7 +322,10 @@ function selectStore(index) {
   markers[index].openPopup();
 }
 
+var isRendering = false;
+
 async function geocodeAndRender(storesToRender) {
+  isRendering = true;
   clearMarkers();
   document.getElementById('store-list').innerHTML = '';
   document.getElementById('no-results').style.display = 'none';
@@ -399,7 +336,11 @@ async function geocodeAndRender(storesToRender) {
 
   for (var i = 0; i < storesToRender.length; i++) {
     var store = storesToRender[i];
-    var coords = (store.lat && store.lng) ? { lat: store.lat, lng: store.lng } : await geocode(store.address);
+    var hadCoords = !!(store.lat && store.lng);
+    // a cached address (or one we've already resolved) needs no network call,
+    // so we can render it instantly — only uncached lookups get throttled below
+    var wasCached = hadCoords || isGeocodeCached(store.address);
+    var coords = hadCoords ? { lat: store.lat, lng: store.lng } : await geocode(store.address);
     if (!coords) continue;
     store._lat = coords.lat;
     store._lng = coords.lng;
@@ -408,18 +349,30 @@ async function geocodeAndRender(storesToRender) {
     addMarker(store, coords, i);
     addSidebarCard(store, i);
     // stay comfortably under Nominatim's ~1 req/sec guidance for any uncached lookups
-    if (!(store.lat && store.lng)) await sleep(1100);
+    if (!wasCached) await sleep(1100);
   }
 
+  isRendering = false;
   document.getElementById('loading-state').style.display = 'none';
   document.getElementById('count').textContent = rendered;
 
   if (rendered === 0) {
     document.getElementById('no-results').style.display = 'block';
-  } else if (bounds.length === 1) {
-    map.setView(bounds[0], 13);
+    // no live locations yet — show the "coming soon" notice pinned at map center
+    if (!comingSoonPopup) {
+      comingSoonPopup = L.popup({ closeButton: false, autoClose: false, closeOnClick: false })
+        .setLatLng([39.8283, -98.5795])
+        .setContent('<div class="store-popup"><h3>Coming soon!</h3><p>Whatcha is coming soon. Check back soon for retail locations.</p></div>');
+    }
+    comingSoonPopup.openOn(map);
   } else {
-    map.fitBounds(bounds, { padding: [30, 30] });
+    // real locations exist — make sure the placeholder notice isn't floating over them
+    if (comingSoonPopup) map.closePopup(comingSoonPopup);
+    if (bounds.length === 1) {
+      map.setView(bounds[0], 13);
+    } else {
+      map.fitBounds(bounds, { padding: [30, 30] });
+    }
   }
 }
 
@@ -449,83 +402,48 @@ document.getElementById('zip-input').addEventListener('keydown', function (e) {
   if (e.key === 'Enter') searchByZip();
 });
 
-// ── Admin: quick local add (browser-only — see note in the panel) ──
-// Only visible/usable with the right key in the URL, e.g.
-// store-locator.html?admin=whatcha-owner-2026 — bookmark that link.
-var ADMIN_KEY = 'whatcha-owner-2026';
-function isAdmin() {
-  return new URLSearchParams(window.location.search).get('admin') === ADMIN_KEY;
+// ── Live auto-refresh ──
+// The map reads the dashboard's public feed directly, so marking a store
+// active in HQ already shows it on the next page load. This poll keeps a
+// map that's ALREADY open in sync too: every 60s it re-checks the feed and
+// re-renders only when the active-store list actually changed. Cached
+// addresses re-render instantly (no re-geocoding), so this is cheap.
+var POLL_MS = 60000;
+var lastStoresSignature = '';
+
+function storesSignature(list) {
+  return (list || [])
+    .map(function (s) { return (s.name || '') + '|' + (s.address || ''); })
+    .sort()
+    .join('~~');
 }
 
-function toggleAdmin() {
-  if (!isAdmin()) return;
-  var panel = document.getElementById('admin-panel');
-  panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-}
-
-function addStore() {
-  if (!isAdmin()) return;
-  var name = document.getElementById('f-name').value.trim();
-  var address = document.getElementById('f-address').value.trim();
-  var hours = document.getElementById('f-hours').value.trim();
-  var phone = document.getElementById('f-phone').value.trim();
-  var status = document.getElementById('admin-status');
-
-  if (!name || !address) {
-    status.style.color = 'var(--coral-deep)';
-    status.textContent = 'Name and address are required.';
-    return;
-  }
-
-  var newStore = { name: name, address: address, hours: hours, phone: phone };
-  var local = loadLocalAdditions();
-  local.push(newStore);
-  saveLocalAdditions(local);
-  STORES.push(newStore);
-
-  status.style.color = 'var(--teal)';
-  status.textContent = 'Added. Remember to Export + update stores.json to make it permanent.';
-  geocodeAndRender(STORES);
-
-  ['f-name', 'f-address', 'f-hours', 'f-phone'].forEach(function (id) {
-    document.getElementById(id).value = '';
+function refreshStores() {
+  if (isRendering) return;                                        // a render is mid-flight
+  if (document.getElementById('zip-input').value.trim()) return;  // don't disrupt a zip search
+  fetchStores().then(function (data) {
+    var sig = storesSignature(data);
+    if (sig === lastStoresSignature) return;                      // nothing changed
+    lastStoresSignature = sig;
+    STORES = data;
+    geocodeAndRender(STORES);
   });
-  setTimeout(function () { status.textContent = ''; }, 4000);
-}
-
-function exportLocations() {
-  var data = JSON.stringify(STORES.map(function (s) {
-    return { name: s.name, address: s.address, hours: s.hours || '', phone: s.phone || '' };
-  }), null, 2);
-  var blob = new Blob([data], { type: 'application/json' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = 'stores.json'; a.click();
-  URL.revokeObjectURL(url);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  if (isAdmin()) {
-    document.getElementById('admin-toggle').style.display = 'block';
-  }
-
   map = L.map('map', { scrollWheelZoom: false }).setView([39.8283, -98.5795], 4);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 18
   }).addTo(map);
 
-  // Temporary "coming soon" notice while real store data isn't live yet —
-  // remove this once stores.json has real locations in it.
-  L.popup({ closeButton: false, autoClose: false, closeOnClick: false })
-    .setLatLng([39.8283, -98.5795])
-    .setContent('<div class="store-popup"><h3>Coming soon!</h3><p>Whatcha is coming soon. Check back soon for retail locations.</p></div>')
-    .openOn(map);
-
   fetchStores().then(function (data) {
     STORES = data;
+    lastStoresSignature = storesSignature(data);
     geocodeAndRender(STORES);
   });
+
+  setInterval(refreshStores, POLL_MS);
 });
 </script>
 </body>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base href="/dashboard/">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#0526c5">
+  <title>Whatcha HQ — Internal Dashboard</title>
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/dashboard.css">
+</head>
+<body>
+
+  <!-- LOGIN GATE -->
+  <div id="gate" class="gate hidden">
+    <form id="gate-form" class="gate__card">
+      <img class="gate__logo" src="assets/img/whatcha-wordmark.png" alt="Whatcha">
+      <div class="gate__badge">INTERNAL · HQ</div>
+      <h1>Sales Command</h1>
+      <p class="sub">Sign in to your dashboard</p>
+      <label for="gate-email">Email</label>
+      <input id="gate-email" type="email" autocomplete="username" placeholder="you@whatchadrinking.com">
+      <label for="gate-pass">Password</label>
+      <input id="gate-pass" type="password" autocomplete="current-password" placeholder="••••••••">
+      <button class="btn btn--primary" type="submit">Enter dashboard</button>
+      <div id="gate-msg" class="gate__msg"></div>
+      <div class="gate__mode">Running in <strong>demo mode</strong> — type anything to explore.</div>
+    </form>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="app hidden">
+    <div id="scrim" class="scrim"></div>
+
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <img src="assets/img/favicon.png" alt="">
+        <span>Whatcha HQ</span>
+      </div>
+      <nav id="nav"></nav>
+      <div class="sidebar__foot">
+        Whatcha Drinking, Inc.<br>
+        <button id="logout-btn">Sign out</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button id="hamburger" class="hamburger" aria-label="Menu">☰</button>
+        <div id="topbar-title" class="topbar__title">Dashboard</div>
+        <div class="topbar__spacer"></div>
+        <button id="new-sale-btn" class="btn btn--coral">＋ New sale</button>
+        <div class="search">
+          <span aria-hidden="true">🔍</span>
+          <input id="search-input" type="search" placeholder="Search orders, accounts…">
+        </div>
+      </header>
+      <div id="view" class="view"></div>
+    </div>
+  </div>
+
+  <div id="modal-host"></div>
+  <div id="toast-wrap" class="toast-wrap"></div>
+
+  <!-- config first (sets backend mode), then supabase client, data, charts, app -->
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/charts.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
