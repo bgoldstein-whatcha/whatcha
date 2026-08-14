@@ -139,48 +139,51 @@
   }
 
   function initMarquee() {
-    var track = document.querySelector("[data-marquee]");
-    if (!track) return;
-    var baseItems = Array.prototype.slice.call(track.children);
-    if (!baseItems.length) return;
-    var PX_PER_SECOND = 55; // fixed visual speed so it never looks "fast" or "slow" by accident
+    var tracks = document.querySelectorAll("[data-marquee]");
+    if (!tracks.length) return;
+    var PX_PER_SECOND = 34; // fixed visual speed so it never looks "fast" or "slow" by accident
 
-    function build() {
-      // restart the animation cleanly so a rebuild never leaves it mid-cycle
-      track.style.animation = "none";
-      track.innerHTML = "";
-      baseItems.forEach(function (item) { track.appendChild(item.cloneNode(true)); });
-      var minWidth = Math.max(window.innerWidth, 1600) * 2.5;
-      // repeat the base cycle until comfortably wider than any viewport
-      var guard = 0;
-      while (track.scrollWidth < minWidth && guard < 40) {
+    Array.prototype.forEach.call(tracks, function (track) {
+      var baseItems = Array.prototype.slice.call(track.children);
+      if (!baseItems.length) return;
+
+      function build() {
+        // restart the animation cleanly so a rebuild never leaves it mid-cycle
+        track.style.animation = "none";
+        track.innerHTML = "";
         baseItems.forEach(function (item) { track.appendChild(item.cloneNode(true)); });
-        guard++;
+        var minWidth = Math.max(window.innerWidth, 1600) * 2.5;
+        // repeat the base cycle until comfortably wider than any viewport
+        var guard = 0;
+        while (track.scrollWidth < minWidth && guard < 40) {
+          baseItems.forEach(function (item) { track.appendChild(item.cloneNode(true)); });
+          guard++;
+        }
+        // duplicate the whole block once more so translateX(-50%) is an exact,
+        // seamless whole-cycle shift no matter how many repeats were needed
+        var built = Array.prototype.slice.call(track.children);
+        built.forEach(function (item) { track.appendChild(item.cloneNode(true)); });
+
+        // duration scales with the actual content width so speed (px/sec) stays
+        // constant no matter how wide the viewport or how many repeats it took
+        var halfWidth = track.scrollWidth / 2;
+        var duration = (halfWidth / PX_PER_SECOND).toFixed(2);
+        // force reflow so the "none" above actually takes effect before re-enabling
+        void track.offsetWidth;
+        track.style.animation = "marquee " + duration + "s linear infinite";
       }
-      // duplicate the whole block once more so translateX(-50%) is an exact,
-      // seamless whole-cycle shift no matter how many repeats were needed
-      var built = Array.prototype.slice.call(track.children);
-      built.forEach(function (item) { track.appendChild(item.cloneNode(true)); });
 
-      // duration scales with the actual content width so speed (px/sec) stays
-      // constant no matter how wide the viewport or how many repeats it took
-      var halfWidth = track.scrollWidth / 2;
-      var duration = (halfWidth / PX_PER_SECOND).toFixed(2);
-      // force reflow so the "none" above actually takes effect before re-enabling
-      void track.offsetWidth;
-      track.style.animation = "marquee " + duration + "s linear infinite";
-    }
-
-    build();
-    var resizeTimer;
-    window.addEventListener("resize", function () {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(build, 200);
-    });
-    // if the page is restored from bfcache (browser back/forward), rebuild so
-    // the animation duration/content always matches the current layout
-    window.addEventListener("pageshow", function (e) {
-      if (e.persisted) build();
+      build();
+      var resizeTimer;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(build, 200);
+      });
+      // if the page is restored from bfcache (browser back/forward), rebuild so
+      // the animation duration/content always matches the current layout
+      window.addEventListener("pageshow", function (e) {
+        if (e.persisted) build();
+      });
     });
   }
 
