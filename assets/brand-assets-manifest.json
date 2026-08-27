@@ -21,7 +21,9 @@
     "category": "Product Photography",
     "items": [
       { "name": "Spiked Tropical Punch Pouch", "file": "assets/images/pouches/tropical-punch.png", "format": "PNG" },
-      { "name": "Spiked Peach Lemonade Pouch", "file": "assets/images/pouches/peach-lemonade.png", "format": "PNG" }
+      { "name": "Spiked Peach Lemonade Pouch", "file": "assets/images/pouches/peach-lemonade.png", "format": "PNG" },
+      { "name": "Spiked Tropical Punch Pouch (Back)", "file": "assets/images/pouches/tropical-punch-back.png", "format": "PNG" },
+      { "name": "Spiked Peach Lemonade Pouch (Back)", "file": "assets/images/pouches/peach-lemonade-back.png", "format": "PNG" }
     ]
   },
   {
