@@ -184,6 +184,7 @@
         <ul>
           <li><a href="join-the-team.html">Join the team</a></li>
           <li><a href="sell-whatcha.html">Wanna sell Whatcha?</a></li>
+          <li><a href="brand-ambassador.html">Brand Ambassador</a></li>
           <li><a href="brand-assets.html" aria-current="page">Brand Assets</a></li>
         </ul>
       </div>
@@ -218,6 +219,12 @@
 //  actual file somewhere under assets/), no HTML editing needed. Same
 //  data-driven pattern as store-locator/stores.json.
 // ════════════════════════════════════════════════
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function renderAssets(categories) {
   var root = document.getElementById('assets-root');
   root.innerHTML = '';
@@ -245,11 +252,12 @@ function renderAssets(categories) {
       var card = document.createElement('div');
       card.className = 'asset-card';
       card.innerHTML =
-        '<div class="asset-card__thumb"><img src="' + item.file + '" alt="' + item.name + '" loading="lazy" /></div>' +
+        '<div class="asset-card__thumb"><img src="' + esc(item.file) + '" alt="' + esc(item.name) + '" loading="lazy" /></div>' +
         '<div class="asset-card__body">' +
-          '<span class="asset-card__format">' + item.format + '</span>' +
-          '<span class="asset-card__name">' + item.name + '</span>' +
-          '<a class="asset-card__download" href="' + item.file + '" download>Download</a>' +
+          '<span class="asset-card__format">' + esc(item.format) + '</span>' +
+          '<span class="asset-card__name">' + esc(item.name) + '</span>' +
+          '<a class="asset-card__download" href="' + esc(item.file) + '" download' +
+            ' data-asset-name="' + esc(item.name) + '" data-asset-category="' + esc(category.category) + '" data-asset-format="' + esc(item.format) + '">Download</a>' +
         '</div>';
       grid.appendChild(card);
     });
@@ -264,6 +272,19 @@ document.addEventListener('DOMContentLoaded', function () {
     .then(function (res) { return res.json(); })
     .then(renderAssets)
     .catch(function () { renderAssets([]); });
+
+  // GA4 event per download click — lets us see which assets get pulled and
+  // how often, without adding any friction (no login/email gate) for the
+  // press/retail partners actually grabbing files here.
+  document.getElementById('assets-root').addEventListener('click', function (e) {
+    var link = e.target.closest('.asset-card__download');
+    if (!link || typeof gtag !== 'function') return;
+    gtag('event', 'brand_asset_download', {
+      asset_name: link.dataset.assetName,
+      asset_category: link.dataset.assetCategory,
+      asset_format: link.dataset.assetFormat,
+    });
+  });
 });
 </script>
 </body>
