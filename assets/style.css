@@ -17,6 +17,15 @@
 }
 
 @font-face {
+  font-family: "FT Buck Shadow";
+  src: url("fonts/ft-buck-shadow-regular.woff2") format("woff2"),
+       url("fonts/ft-buck-shadow-regular.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "Bazook";
   src: url("fonts/bazook-regular.woff2") format("woff2"),
        url("fonts/bazook-regular.woff") format("woff");
@@ -28,6 +37,9 @@
 :root {
   /* FT Buck: reserved for the biggest headline moments only (hero, badge). */
   --font-display: "FT Buck", "Baloo 2", sans-serif;
+  /* the matching shadow-layer face — same letterforms, pre-extruded down-right,
+     meant to sit directly behind --font-display at an identical position */
+  --font-display-shadow: "FT Buck Shadow", "Baloo 2", sans-serif;
   /* Bazook: the workhorse — every sub-headline, nav item, button, label. */
   --font-ui: "Bazook", "Baloo 2", sans-serif;
 
@@ -461,13 +473,25 @@ section { position: relative; }
   min-height: min(85vh, 760px);
 }
 .hero__copy h1 {
+  position: relative;
   font-size: var(--fs-display);
   color: var(--yellow);
-  text-shadow: 0.065em 0.065em 0 var(--navy);
   /* optical correction: FT Buck's rounded "S" has a curved entry stroke that reads as
      more indented than the flat-stroked "N" below it, even though both boxes start at
-     the exact same x — nudge purely visually (not the box) so the two lines look flush */
+     the exact same x — nudge purely visually (not the box) so the two lines look flush.
+     Applied to the whole stack so the shadow layer stays perfectly registered under the face. */
   transform: translateX(-0.06em);
+}
+.hero__copy h1 .hero-h1__shadow {
+  position: absolute;
+  inset: 0;
+  font-family: var(--font-display-shadow);
+  color: var(--navy);
+  z-index: 0;
+}
+.hero__copy h1 .hero-h1__face {
+  position: relative;
+  z-index: 1;
 }
 .hero__tag {
   font-family: var(--font-ui); letter-spacing: 0.03em;
