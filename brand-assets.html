@@ -118,6 +118,27 @@
     border: 3px dashed rgba(5,38,197,0.25);
     border-radius: var(--radius-sm);
   }
+
+  /* ---------- email gate (reuses .age-gate shell) ---------- */
+  .email-gate__card { background: var(--navy); }
+  .email-gate__card p {
+    color: var(--cream);
+    opacity: 0.85;
+    font-size: 0.95rem;
+    margin: -0.75rem 0 1.5rem;
+  }
+  .email-gate__form { display: flex; flex-direction: column; gap: 0.75rem; }
+  .email-gate__form input[type="email"] {
+    font-family: "Nunito Sans", sans-serif;
+    font-size: 1rem;
+    padding: 0.75em 1em;
+    border: 3px solid var(--navy);
+    border-radius: var(--radius-sm);
+    background: var(--cream);
+    color: var(--ink);
+  }
+  .email-gate__form input[type="email"]:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
+  .email-gate__status { color: var(--cream); font-size: 0.85rem; min-height: 1.2em; }
 </style>
 </head>
 <body>
@@ -132,6 +153,22 @@
       <button type="button" class="btn" data-age-yes>Absolutely!</button>
       <button type="button" class="btn btn--outline" data-age-no>Not yet</button>
     </div>
+  </div>
+</div>
+
+<div class="age-gate" data-email-gate role="dialog" aria-modal="true" aria-labelledby="email-gate-title" hidden>
+  <div class="age-gate__card email-gate__card">
+    <div class="logo-badge">
+      <img src="assets/images/logo/logo-badge-combined.png" alt="Whatcha Drinking?" />
+    </div>
+    <h2 id="email-gate-title">Unlock the Brand Assets</h2>
+    <p>Drop your email and we'll let you in — logos, photos, and more, ready to download.</p>
+    <form class="email-gate__form" data-email-gate-form data-form-endpoint="https://formspree.io/f/meaqznro" aria-label="Brand assets email unlock">
+      <label for="email-gate-input" class="visually-hidden">Enter your email</label>
+      <input id="email-gate-input" type="email" name="email" placeholder="Enter your email here..." required />
+      <button type="submit" class="btn">Unlock Assets</button>
+      <p class="email-gate__status" data-email-gate-status aria-live="polite"></p>
+    </form>
   </div>
 </div>
 
@@ -270,15 +307,69 @@ function renderAssets(categories) {
   });
 }
 
+var EMAIL_GATE_KEY = 'whatcha_brand_assets_email';
+
+function initEmailGate() {
+  var gate = document.querySelector('[data-email-gate]');
+  var form = document.querySelector('[data-email-gate-form]');
+  if (!gate || !form) return;
+
+  function show() {
+    if (localStorage.getItem(EMAIL_GATE_KEY)) return;
+    gate.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  // the age gate (assets/main.js) has to clear first — if it's already been
+  // verified this session it's hidden synchronously before this runs, so
+  // check once, then fall back to watching for its hidden attribute to flip
+  var ageGate = document.querySelector('[data-age-gate]');
+  if (!ageGate || ageGate.hidden) {
+    show();
+  } else {
+    var observer = new MutationObserver(function () {
+      if (ageGate.hidden) { show(); observer.disconnect(); }
+    });
+    observer.observe(ageGate, { attributes: true, attributeFilter: ['hidden'] });
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var status = form.querySelector('[data-email-gate-status]');
+    var submitBtn = form.querySelector('button[type="submit"]');
+    var email = form.querySelector('input[type="email"]').value;
+    submitBtn.disabled = true;
+    status.textContent = 'Unlocking…';
+
+    var data = new FormData(form);
+    data.append('_subject', 'Brand Assets unlock — ' + email);
+
+    fetch(form.getAttribute('data-form-endpoint'), {
+      method: 'POST',
+      headers: { Accept: 'application/json' },
+      body: data
+    }).then(function (res) {
+      if (!res.ok) throw new Error('bad response');
+      localStorage.setItem(EMAIL_GATE_KEY, email);
+      if (typeof gtag === 'function') gtag('event', 'brand_assets_email_unlock');
+      gate.hidden = true;
+      document.body.style.overflow = '';
+    }).catch(function () {
+      status.textContent = "Something went wrong — please email hello@whatchadrinking.com directly.";
+      submitBtn.disabled = false;
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+  initEmailGate();
+
   fetch('assets/brand-assets-manifest.json')
     .then(function (res) { return res.json(); })
     .then(renderAssets)
     .catch(function () { renderAssets([]); });
 
-  // GA4 event per download click — lets us see which assets get pulled and
-  // how often, without adding any friction (no login/email gate) for the
-  // press/retail partners actually grabbing files here.
+  // GA4 event per download click — lets us see which assets get pulled and how often
   document.getElementById('assets-root').addEventListener('click', function (e) {
     var link = e.target.closest('.asset-card__download');
     if (!link || typeof gtag !== 'function') return;
