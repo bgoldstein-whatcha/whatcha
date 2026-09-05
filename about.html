@@ -41,21 +41,22 @@
 
   .story-section { padding-top: clamp(2rem, 5vw, 3rem); }
 
-  .story-body { max-width: 760px; margin-inline: auto; padding-block: clamp(2.5rem, 6vw, 4rem); display: flex; flex-direction: column; gap: 1.4rem; font-size: var(--fs-body-lg); line-height: 1.7; }
+  .story-body { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 1.4rem; font-size: var(--fs-body-lg); line-height: 1.7; }
   .story-body p { color: var(--ink); }
   .signoff { margin-top: 0.5rem; }
   .signoff__img { width: 80px; height: auto; margin-bottom: 0.3rem; }
   .signoff__name { font-family: var(--font-ui); letter-spacing: 0.03em; font-weight: 700; font-size: var(--fs-h3); color: var(--navy); margin: 0; }
   .signoff__title { font-family: "Nunito Sans", sans-serif; font-weight: 600; font-size: var(--fs-small); color: var(--ink); opacity: 0.7; margin: 0.2rem 0 0; }
 
-  .photo-row { display: grid; gap: clamp(0.75rem, 2vw, 1.25rem); margin-block: 2rem; }
-  .photo-row--two { grid-template-columns: repeat(2, 1fr); }
-  .photo-row--four { grid-template-columns: repeat(4, 1fr); }
+  .photo-row { display: grid; gap: clamp(0.75rem, 2vw, 1.25rem); margin-block: clamp(2rem, 5vw, 3rem); margin-inline: auto; }
+  .photo-row--two { grid-template-columns: repeat(2, 1fr); max-width: clamp(420px, 55vw, 640px); }
+  .photo-row--four { grid-template-columns: repeat(4, 1fr); max-width: clamp(700px, 88vw, 1100px); }
   .photo-row img {
     width: 100%; height: 100%; object-fit: cover;
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-soft);
     aspect-ratio: 3 / 4;
+    border: 4px solid var(--navy);
   }
   @media (max-width: 560px) {
     .photo-row--four { grid-template-columns: repeat(2, 1fr); }
@@ -109,14 +110,16 @@
         <p>I kept noticing the same thing.</p>
         <p>At house parties, someone would show up with a homemade cocktail in a pouch. Beach days, parks, concerts, same thing. People were mixing their own drinks, sealing them up, and carrying them around like they'd invented something, because they kind of had. The format was fun, portable, and social in a way that a can never quite is.</p>
         <p>The question that stuck with me: why doesn't this exist as a real product?</p>
+      </div>
 
-        <div class="photo-row photo-row--two">
-          <img src="assets/images/about/story-park-hangout.jpg" alt="Whatcha pouch out at a park hangout" />
-          <img src="assets/images/about/story-outdoors.jpg" alt="Two friends holding Whatcha pouches" />
-        </div>
+      <div class="photo-row photo-row--two">
+        <img src="assets/images/about/story-park-hangout.jpg" alt="Whatcha pouch out at a park hangout" />
+        <img src="assets/images/about/story-outdoors.jpg" alt="Two friends holding Whatcha pouches" />
+      </div>
 
+      <div class="story-body">
         <p>Our entire generation grew up with a juice pouch in every lunchbox. The pouch isn't just packaging. It's a memory. It's fun, it's easy, it's made to be shared. People were already remixing that nostalgia into something a little more grown up. All it needed was someone to do it right.</p>
-        <p>So we did. Whatcha is a spirits-based, ready-to-drink cocktail pouch, the grown-up version of the pouch drinks you grew up with. Spiked Peach Lemonade and Spiked Tropical Punch, 10% ABV, 3 grams of added sugar, crafted with award-winning mixologist Tom Macy. Built to be fun.</p>
+        <p>So we did. Whatcha is a spirits-based, ready-to-drink cocktail pouch, the grown-up version of the pouch drinks you grew up with. Spiked Peach Lemonade and Spiked Tropical Punch, 10% ABV, 3 grams of added sugar, crafted with award-winning bartender Tom Macy. Built to be fun.</p>
         <p>Squeeze the Day!</p>
 
         <div class="signoff">
@@ -124,13 +127,13 @@
           <p class="signoff__name">Ben</p>
           <p class="signoff__title">Founder</p>
         </div>
+      </div>
 
-        <div class="photo-row photo-row--four">
-          <img src="assets/images/lifestyle/poolside-portrait.jpg" alt="Woman poolside holding a Whatcha Spiked Peach Lemonade pouch" />
-          <img src="assets/images/lifestyle/beach-volleyball.jpg" alt="Friends playing beach volleyball with a Whatcha Spiked Peach Lemonade pouch in the sand" />
-          <img src="assets/images/lifestyle/poolside-fruit-flatlay.jpg" alt="Two Whatcha pouches poolside with fresh fruit" />
-          <img src="assets/images/lifestyle/night-sipping-portrait.jpg" alt="Woman sipping a Whatcha Spiked Tropical Punch pouch at dusk" />
-        </div>
+      <div class="photo-row photo-row--four">
+        <img src="assets/images/lifestyle/poolside-portrait.jpg" alt="Woman poolside holding a Whatcha Spiked Peach Lemonade pouch" />
+        <img src="assets/images/lifestyle/beach-volleyball.jpg" alt="Friends playing beach volleyball with a Whatcha Spiked Peach Lemonade pouch in the sand" />
+        <img src="assets/images/lifestyle/poolside-fruit-flatlay.jpg" alt="Two Whatcha pouches poolside with fresh fruit" />
+        <img src="assets/images/lifestyle/night-sipping-portrait.jpg" alt="Woman sipping a Whatcha Spiked Tropical Punch pouch at dusk" />
       </div>
     </div>
   </section>
