@@ -25,12 +25,23 @@
     font-family: var(--font-display);
     font-weight: 800;
     color: var(--yellow);
-    text-shadow: 0.065em 0.065em 0 var(--navy);
     font-size: clamp(2.5rem, 7vw, 5rem);
     line-height: 0.95;
     margin-bottom: 0.75rem;
     position: relative;
     z-index: 2;
+    transform: translateX(-0.06em);
+  }
+  .wla-headline__shadow {
+    position: absolute;
+    inset: 0;
+    font-family: var(--font-display-shadow);
+    color: var(--navy);
+    z-index: 0;
+  }
+  .wla-headline__face {
+    position: relative;
+    z-index: 1;
   }
 
   .wla-sub {
@@ -39,56 +50,107 @@
     font-weight: 700;
     color: var(--navy);
     font-size: clamp(1.1rem, 2.6vw, 1.35rem);
-    margin-bottom: 2.5rem;
+    margin-bottom: 2rem;
     position: relative;
     z-index: 2;
   }
 
-  .wla-gif-frame {
-    background: var(--cream);
+  /* ---------- story flip card ---------- */
+  .wla-flip {
+    position: relative;
+    z-index: 2;
+    max-width: 620px;
+    margin-inline: auto;
+    margin-top: 1rem;
+    perspective: 1600px;
+  }
+  .wla-flip__inner {
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+  }
+  .wla-flip.is-flipped .wla-flip__inner { transform: rotateY(180deg); }
+
+  .wla-flip__front,
+  .wla-flip__back {
     border: 4px solid var(--navy);
     border-radius: var(--radius);
     box-shadow: var(--shadow-hard);
-    padding: 0.75rem;
-    max-width: min(90vw, 480px);
-    margin-inline: auto;
-    transform: rotate(-1deg);
-    position: relative;
-    z-index: 2;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
-  .wla-gif-frame img {
-    display: block;
+  .wla-flip__front {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    border-radius: calc(var(--radius) - 10px);
-    min-height: 220px;
-    background: var(--sky-pale);
-    object-fit: cover;
-  }
-  .wla-gif-credit {
-    font-family: "Nunito Sans", sans-serif;
-    color: var(--ink);
-    opacity: 0.55;
-    margin-top: 0.75rem;
-    font-size: 0.75rem;
-  }
-  .wla-gif-credit a { text-decoration: underline; color: inherit; }
-
-  .wla-actions {
+    background: var(--yellow);
+    padding: clamp(2rem, 5vw, 3rem);
     display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    position: relative;
-    z-index: 2;
+    gap: 0.4rem;
+    cursor: pointer;
+    text-align: center;
+    font: inherit;
+    transition: transform 0.15s ease;
+  }
+  .wla-flip__front:hover { transform: translate(-2px, -2px); }
+  .wla-flip__prompt {
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 3vw, 1.7rem);
+    color: var(--navy);
+    margin: 0;
+  }
+  .wla-flip__hint {
+    font-family: "Nunito Sans", sans-serif;
+    font-size: 0.85rem;
+    color: var(--navy);
+    opacity: 0.7;
+    margin: 0;
   }
 
-  .wla-home-link {
-    margin-top: 1.5rem;
+  .wla-flip__back {
     position: relative;
-    z-index: 2;
+    background: var(--teal-pale);
+    padding: clamp(1.75rem, 4vw, 2.5rem);
+    text-align: left;
+    transform: rotateY(180deg);
   }
-  .wla-home-link a {
+  .wla-flip__back-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .wla-flip__flipback {
+    background: none;
+    border: none;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    color: var(--navy);
+    opacity: 0.65;
+    cursor: pointer;
+    padding: 0;
+  }
+  .wla-flip__flipback:hover { opacity: 1; }
+
+  .wla-story-card__eyebrow {
+    font-family: var(--font-ui);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: var(--coral-deep);
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+  }
+  .wla-flip__back p { color: var(--ink); font-size: var(--fs-body-lg); line-height: 1.6; margin-bottom: 1rem; }
+  .wla-flip__back a.wla-story-link {
     font-family: var(--font-ui);
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -96,37 +158,94 @@
     text-decoration: underline;
   }
 
+  /* ---------- sign-off (signature + typed name + title) ---------- */
+  .signoff { margin-bottom: 0.75rem; }
+  .signoff__img { width: 70px; height: auto; margin-bottom: 0.2rem; }
+  .signoff__name { font-family: var(--font-ui); font-weight: 700; font-size: 1rem; color: var(--navy); margin: 0; }
+  .signoff__title { font-family: "Nunito Sans", sans-serif; font-weight: 600; font-size: var(--fs-small); color: var(--ink); opacity: 0.7; margin: 0.1rem 0 0; }
+
+  /* ---------- pouches (static — no motion, no drop shadow) ---------- */
+  .wla-headline-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1rem, 4vw, 3rem);
+    position: relative;
+    z-index: 2;
+  }
   .wla-pouch {
-    position: absolute;
     width: clamp(70px, 9vw, 120px);
-    filter: drop-shadow(4px 4px 0 rgba(18,18,58,0.25));
     z-index: 1;
-    animation: sway 5s ease-in-out infinite;
+    flex: none;
   }
-  @keyframes sway {
-    0%, 100% { transform: rotate(-5deg); }
-    50% { transform: rotate(5deg); }
-  }
-  .wla-pouch--1 { top: 4%; left: 6%; }
-  .wla-pouch--2 { bottom: 4%; right: 6%; animation-delay: -2.5s; }
+  .wla-pouch--1 { transform: rotate(-10deg); }
+  .wla-pouch--2 { transform: rotate(10deg); }
 
   @media (max-width: 700px) {
     .sparkle { display: none; }
-    .wla-pouch-row {
-      display: flex;
-      justify-content: center;
+    .wla-headline-row {
+      flex-wrap: wrap;
       gap: 1.25rem;
-      margin-bottom: 1.25rem;
-      position: relative;
-      z-index: 2;
+      margin-bottom: 0.5rem;
     }
-    .wla-pouch-row .wla-pouch {
-      position: static;
+    .wla-headline-row .wla-headline {
+      order: 2;
+      flex-basis: 100%;
+    }
+    .wla-pouch {
+      order: 1;
       width: clamp(52px, 16vw, 80px);
-      opacity: 1;
-      filter: drop-shadow(3px 3px 0 rgba(18,18,58,0.25));
     }
+    .wla-pouch--1 { transform: rotate(-8deg); }
+    .wla-pouch--2 { transform: rotate(8deg); }
+    .wla-flip__back p { font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem; }
+    .signoff__img { width: 56px; }
+    .signoff { margin-bottom: 0.5rem; }
   }
+
+  /* ---------- community section ---------- */
+  .wla-community { background: var(--teal); }
+  .wla-community h2 { color: var(--navy); }
+  .wla-community .fs-body-lg { color: var(--navy); max-width: 520px; margin-inline: auto; }
+
+  .photo-row { display: grid; gap: clamp(0.75rem, 2vw, 1.25rem); margin-block: 2rem; }
+  .photo-row--three { grid-template-columns: repeat(3, 1fr); }
+  .photo-row img {
+    width: 100%; height: 100%; object-fit: cover;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-soft);
+    aspect-ratio: 3 / 4;
+    border: 4px solid var(--navy);
+  }
+  @media (max-width: 560px) {
+    .photo-row--three { grid-template-columns: repeat(2, 1fr); }
+    .photo-row--three img:last-child { grid-column: span 2; }
+  }
+
+  .marquee.marquee--social {
+    background: var(--navy);
+    border-color: var(--navy-deep);
+    padding-block: 1.15rem;
+    display: block;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    max-width: 620px;
+    margin-inline: auto;
+  }
+  .marquee--social .marquee__word {
+    color: var(--yellow);
+    font-size: clamp(1.1rem, 0.9vw + 1rem, 1.4rem);
+    letter-spacing: 0.04em;
+  }
+  .marquee--social .marquee__star { color: var(--yellow); font-size: clamp(1rem, 0.6vw + 0.8rem, 1.2rem); }
+  .marquee--social:hover .marquee__word { color: var(--cream); }
+
+  .wla-tag-note { margin-top: 1.25rem; color: var(--navy); font-size: 0.95rem; }
+
+  /* ---------- find more whatcha ---------- */
+  .wla-find { background: var(--coral); text-align: center; }
+  .wla-find h2 { color: var(--navy); margin-bottom: 0.85rem; }
+  .wla-find p { color: var(--navy); max-width: 480px; margin: 0 auto 2rem; opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -168,28 +287,74 @@
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--teal); bottom:14%; left:18%;"></span>
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--coral); bottom:20%; right:20%;"></span>
 
-    <div class="wla-pouch-row">
-      <img class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.png" alt="" aria-hidden="true" />
-      <img class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.png" alt="" aria-hidden="true" />
-    </div>
-
     <div class="container">
-      <h1 class="wla-headline">WHATCHA<br>LOOKIN AT?!</h1>
+      <div class="wla-headline-row">
+        <img class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.png" alt="" aria-hidden="true" />
+        <h1 class="wla-headline">
+          <span class="wla-headline__shadow" aria-hidden="true">WHATCHA<br>LOOKIN AT?!</span>
+          <span class="wla-headline__face">WHATCHA<br>LOOKIN AT?!</span>
+        </h1>
+        <img class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.png" alt="" aria-hidden="true" />
+      </div>
       <p class="wla-sub">Cheers to what YOU'RE drinking!</p>
 
-      <div class="wla-gif-frame">
-        <img id="celebrate-gif" src="" alt="A random celebratory GIF" />
+      <div class="wla-flip" id="flip-card">
+        <div class="wla-flip__inner">
+          <div class="wla-flip__back">
+            <p class="wla-story-card__eyebrow">The Story</p>
+            <p>We noticed people were already mixing cocktails into pouches for beach days, parks and concerts. So we made it official: a real spirits-based, ready-to-drink cocktail pouch, built for the format our generation grew up loving. Basically, the alcohol pouch you wish existed sooner.</p>
+            <div class="signoff">
+              <img class="signoff__img" src="../assets/images/logo/ben-signature.png" alt="Ben's signature" />
+              <p class="signoff__name">Ben</p>
+              <p class="signoff__title">Founder</p>
+            </div>
+            <div class="wla-flip__back-row">
+              <a href="../about.html" class="wla-story-link">Read our story &rarr;</a>
+              <button type="button" class="wla-flip__flipback">&#8635; Flip back</button>
+            </div>
+          </div>
+          <button type="button" class="wla-flip__front">
+            <p class="wla-flip__prompt">So, what's Whatcha?</p>
+            <p class="wla-flip__hint">(tap to find out)</p>
+          </button>
+        </div>
       </div>
-      <p class="wla-gif-credit">Powered by <a href="https://giphy.com" target="_blank" rel="noopener">GIPHY</a></p>
+    </div>
+  </section>
 
-      <div class="wla-actions">
-        <button type="button" class="btn" id="shuffle-btn">Gimme another one!</button>
+  <div class="section-divider" aria-hidden="true"></div>
+  <section class="wla-community section-pad text-center">
+    <div class="container">
+      <h2>Whatcha in the wild</h2>
+      <p class="fs-body-lg">Show us how you Squeeze the Day</p>
+
+      <div class="photo-row photo-row--three">
+        <img src="../assets/images/lifestyle/poolside-portrait.jpg" alt="Woman poolside holding a Whatcha Spiked Peach Lemonade pouch" />
+        <img src="../assets/images/lifestyle/night-sipping-portrait.jpg" alt="Woman sipping a Whatcha Spiked Tropical Punch pouch at dusk" />
+        <img src="../assets/images/lifestyle/coral-hand-hold.jpg" alt="Hand holding a Whatcha Spiked Peach Lemonade pouch" />
       </div>
-      <p class="wla-home-link"><a href="../index.html">&larr; Back to whatchadrinking.com</a></p>
+
+      <a class="marquee marquee--social" href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener" aria-label="Follow Whatcha on Instagram, @drinkwhatcha">
+        <div class="marquee__track" data-marquee>
+          <span class="marquee__star">✦</span>
+          <span class="marquee__word">Follow @drinkwhatcha</span>
+        </div>
+      </a>
+      <p class="wla-tag-note">Tag @drinkwhatcha on Instagram or TikTok for a chance to get featured.</p>
+    </div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+  <section class="wla-find section-pad">
+    <div class="container">
+      <h2>Find more Whatcha</h2>
+      <p>More flavors, more stops, more days worth squeezing. See where Whatcha's landing next.</p>
+      <a href="../store-locator/store-locator.html" class="btn">Where's Whatcha?</a>
     </div>
   </section>
 </main>
 
+<div class="section-divider" aria-hidden="true"></div>
 <footer class="site-footer" id="contact">
   <div class="container">
     <div class="footer-grid">
@@ -235,53 +400,12 @@
 
 <script src="../assets/main.js"></script>
 <script>
-var GIPHY_API_KEY = 'M43Zr8yNk4MjhwdUSlqQf6e3iCaf2aCz';
-var GIPHY_TAGS = [
-  'excited', 'celebration', 'yasss', 'high five', 'mind blown',
-  'dance party', 'woohoo', 'cheers', 'confetti', 'happy dance',
-  'laughing', 'thumbs up', 'yes', 'fist pump', 'party time'
-];
-var FALLBACK_GIFS = [
-  'horse.gif', 'spinning-dancer.gif', 'sleeping-cat.gif', 'floss-dance.gif',
-  'cat-paws.gif', 'dog-wiggle.gif', 'cat-funny.gif', 'thumbsup.gif',
-  'sticker-exciting.gif', 'sticker-selfie.gif', 'sticker-what.gif',
-  'sticker-astronaut.gif', 'sticker-dragon.gif'
-];
-var lastTag = null;
-
-function loadFallbackGif() {
-  var img = document.getElementById('celebrate-gif');
-  var pick = FALLBACK_GIFS[Math.floor(Math.random() * FALLBACK_GIFS.length)];
-  img.src = '../assets/images/gifs/' + pick;
-}
-
-function loadRandomGif() {
-  var img = document.getElementById('celebrate-gif');
-  var tag = GIPHY_TAGS[Math.floor(Math.random() * GIPHY_TAGS.length)];
-  if (GIPHY_TAGS.length > 1) {
-    while (tag === lastTag) { tag = GIPHY_TAGS[Math.floor(Math.random() * GIPHY_TAGS.length)]; }
-  }
-  lastTag = tag;
-
-  var url = 'https://api.giphy.com/v1/gifs/random?api_key=' + GIPHY_API_KEY +
-    '&tag=' + encodeURIComponent(tag) + '&rating=g';
-
-  fetch(url).then(function (res) {
-    if (!res.ok) throw new Error('Giphy request failed');
-    return res.json();
-  }).then(function (data) {
-    var images = data && data.data && data.data.images;
-    var gifUrl = images && ((images.downsized && images.downsized.url) || (images.original && images.original.url));
-    if (!gifUrl) throw new Error('No gif in response');
-    img.src = gifUrl;
-  }).catch(function () {
-    loadFallbackGif();
-  });
-}
-
 document.addEventListener('DOMContentLoaded', function () {
-  loadRandomGif();
-  document.getElementById('shuffle-btn').addEventListener('click', loadRandomGif);
+  var flip = document.getElementById('flip-card');
+  var front = flip.querySelector('.wla-flip__front');
+  var flipBack = flip.querySelector('.wla-flip__flipback');
+  front.addEventListener('click', function () { flip.classList.add('is-flipped'); });
+  flipBack.addEventListener('click', function () { flip.classList.remove('is-flipped'); });
 });
 </script>
 </body>
