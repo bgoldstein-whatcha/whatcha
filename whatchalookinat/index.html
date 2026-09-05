@@ -210,12 +210,16 @@
 
   .photo-row { display: grid; gap: clamp(0.75rem, 2vw, 1.25rem); margin-block: 2rem; }
   .photo-row--three { grid-template-columns: repeat(3, 1fr); }
+  .photo-row--four { grid-template-columns: repeat(4, 1fr); }
   .photo-row img {
     width: 100%; height: 100%; object-fit: cover;
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-soft);
     aspect-ratio: 3 / 4;
     border: 4px solid var(--navy);
+  }
+  @media (max-width: 700px) {
+    .photo-row--four { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 560px) {
     .photo-row--three { grid-template-columns: repeat(2, 1fr); }
@@ -328,10 +332,11 @@
       <h2>Whatcha in the wild</h2>
       <p class="fs-body-lg">Show us how you Squeeze the Day</p>
 
-      <div class="photo-row photo-row--three">
+      <div class="photo-row photo-row--four">
         <img src="../assets/images/lifestyle/poolside-portrait.jpg" alt="Woman poolside holding a Whatcha Spiked Peach Lemonade pouch" />
+        <img src="../assets/images/lifestyle/ice-flatlay-hand.jpg" alt="Hand holding a Whatcha Spiked Tropical Punch pouch over ice with fresh fruit" />
+        <img src="../assets/images/lifestyle/beach-volleyball.jpg" alt="Friends playing beach volleyball with a Whatcha Spiked Peach Lemonade pouch in the sand" />
         <img src="../assets/images/lifestyle/night-sipping-portrait.jpg" alt="Woman sipping a Whatcha Spiked Tropical Punch pouch at dusk" />
-        <img src="../assets/images/lifestyle/coral-hand-hold.jpg" alt="Hand holding a Whatcha Spiked Peach Lemonade pouch" />
       </div>
 
       <a class="marquee marquee--social" href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener" aria-label="Follow Whatcha on Instagram, @drinkwhatcha">
