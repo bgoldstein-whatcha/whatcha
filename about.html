@@ -35,12 +35,16 @@
   .about-hero { background: var(--coral); border-bottom: 4px solid var(--navy); position: relative; overflow: hidden; }
   .about-hero .container { padding-block: clamp(2.5rem, 6vw, 4rem); text-align: center; position: relative; }
   .about-hero .eyebrow { color: var(--navy); }
-  .about-hero h1 { font-size: var(--fs-h1); text-shadow: 4px 4px 0 var(--yellow); }
+  .about-hero h1 { font-size: var(--fs-h1); position: relative; }
+  .about-hero h1 .h1-shadow { position: absolute; inset: 0; font-family: var(--font-display-shadow); color: var(--yellow); z-index: 0; }
+  .about-hero h1 .h1-face { position: relative; z-index: 1; }
 
   .story-body { max-width: 760px; margin-inline: auto; padding-block: clamp(2.5rem, 6vw, 4rem); display: flex; flex-direction: column; gap: 1.4rem; font-size: var(--fs-body-lg); line-height: 1.7; }
   .story-body p { color: var(--ink); }
-  .story-sign { font-family: var(--font-ui); letter-spacing: 0.03em; font-weight: 700; font-size: var(--fs-h3); color: var(--navy); margin-top: 0.5rem; }
-  .story-sign span { display: block; font-family: "Nunito Sans", sans-serif; font-weight: 600; font-size: var(--fs-small); color: var(--ink); opacity: 0.7; margin-top: 0.2rem; }
+  .signoff { margin-top: 0.5rem; }
+  .signoff__img { width: 80px; height: auto; margin-bottom: 0.3rem; }
+  .signoff__name { font-family: var(--font-ui); letter-spacing: 0.03em; font-weight: 700; font-size: var(--fs-h3); color: var(--navy); margin: 0; }
+  .signoff__title { font-family: "Nunito Sans", sans-serif; font-weight: 600; font-size: var(--fs-small); color: var(--ink); opacity: 0.7; margin: 0.2rem 0 0; }
 
   .photo-row { display: grid; gap: clamp(0.75rem, 2vw, 1.25rem); margin-block: 2rem; }
   .photo-row--two { grid-template-columns: repeat(2, 1fr); }
@@ -94,7 +98,7 @@
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:20px; --sparkle-color:var(--yellow); top:18%; left:8%;"></span>
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:16px; --sparkle-color:var(--cream); bottom:16%; right:10%;"></span>
     <div class="container">
-      <h1>What's Whatcha?</h1>
+      <h1><span class="h1-shadow" aria-hidden="true">What's Whatcha?</span><span class="h1-face">What's Whatcha?</span></h1>
     </div>
   </section>
 
@@ -114,7 +118,11 @@
         <p>So we did. Whatcha is a spirits-based, ready-to-drink cocktail pouch, the grown-up version of the pouch drinks you grew up with. Spiked Peach Lemonade and Spiked Tropical Punch, 10% ABV, 3 grams of added sugar, crafted with award-winning mixologist Tom Macy. Built to be fun.</p>
         <p>Squeeze the Day!</p>
 
-        <p class="story-sign">– Ben<span>Founder, Whatcha</span></p>
+        <div class="signoff">
+          <img class="signoff__img" src="assets/images/logo/ben-signature.png" alt="Ben's signature" />
+          <p class="signoff__name">Ben</p>
+          <p class="signoff__title">Founder</p>
+        </div>
 
         <div class="photo-row photo-row--three">
           <img src="assets/images/about/story-summer-gathering.jpg" alt="Whatcha pouch at a summer gathering" />

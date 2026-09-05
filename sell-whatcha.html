@@ -48,7 +48,9 @@
     box-shadow: var(--shadow-hard);
     padding: clamp(2rem, 4vw, 3rem);
   }
-  .page-hero__card h1 { font-size: var(--fs-h1); margin-bottom: 0.75rem; text-shadow: 3px 3px 0 var(--cream); }
+  .page-hero__card h1 { font-size: var(--fs-h1); margin-bottom: 0.75rem; position: relative; }
+  .page-hero__card h1 .h1-shadow { position: absolute; inset: 0; font-family: var(--font-display-shadow); color: var(--cream); z-index: 0; }
+  .page-hero__card h1 .h1-face { position: relative; z-index: 1; }
   .page-hero__card p { color: var(--ink); font-size: var(--fs-body-lg); }
   @media (max-width: 800px) {
     .page-hero .container { grid-template-columns: 1fr; text-align: center; }
@@ -98,7 +100,7 @@
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--cream); bottom:10%; right:8%;"></span>
     <div class="container">
       <div class="page-hero__card">
-        <h1>Wanna sell Whatcha?</h1>
+        <h1><span class="h1-shadow" aria-hidden="true">Wanna sell Whatcha?</span><span class="h1-face">Wanna sell Whatcha?</span></h1>
         <p>We're looking for awesome retail and distribution partners. Interested? Let us know:</p>
       </div>
       <div class="page-hero__art">
