@@ -184,10 +184,10 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding-block: 0.85rem;
+  padding-block: 0.6rem;
 }
 .brand-mark { display: flex; align-items: center; }
-.brand-mark img { height: clamp(46px, 6vw, 68px); width: auto; }
+.brand-mark img { height: clamp(54px, 6vw, 76px); width: auto; }
 
 .nav-links {
   display: flex;
