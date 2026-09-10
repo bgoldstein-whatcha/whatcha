@@ -30,6 +30,7 @@
 <link rel="icon" type="image/png" href="assets/images/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" />
 <link rel="stylesheet" href="assets/style.css" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
@@ -51,7 +52,9 @@
     letter-spacing: 0.04em;
   }
   .marquee--social .marquee__star { color: var(--yellow); font-size: clamp(1rem, 0.6vw + 0.8rem, 1.3rem); }
-  .marquee--social:hover .marquee__word { color: var(--cream); }
+  @media (hover: hover) and (pointer: fine) {
+    .marquee--social:hover .marquee__word { color: var(--cream); }
+  }
 </style>
 <script type="application/ld+json">
 {

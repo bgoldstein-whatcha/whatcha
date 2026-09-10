@@ -17,6 +17,7 @@
 <link rel="icon" type="image/png" href="../assets/images/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" />
 <link rel="stylesheet" href="../assets/style.css" />
 <style>
   .wla-hero { padding-block: clamp(2.5rem, 6vw, 4rem); position: relative; overflow: hidden; }
@@ -95,7 +96,9 @@
     font: inherit;
     transition: transform 0.15s ease;
   }
-  .wla-flip__front:hover { transform: translate(-2px, -2px); }
+  @media (hover: hover) and (pointer: fine) {
+    .wla-flip__front:hover { transform: translate(-2px, -2px); }
+  }
   .wla-flip__prompt {
     font-family: var(--font-ui);
     font-weight: 700;
@@ -138,7 +141,9 @@
     cursor: pointer;
     padding: 0;
   }
-  .wla-flip__flipback:hover { opacity: 1; }
+  @media (hover: hover) and (pointer: fine) {
+    .wla-flip__flipback:hover { opacity: 1; }
+  }
 
   .wla-story-card__eyebrow {
     font-family: var(--font-ui);
@@ -242,7 +247,9 @@
     letter-spacing: 0.04em;
   }
   .marquee--social .marquee__star { color: var(--yellow); font-size: clamp(1rem, 0.6vw + 0.8rem, 1.2rem); }
-  .marquee--social:hover .marquee__word { color: var(--cream); }
+  @media (hover: hover) and (pointer: fine) {
+    .marquee--social:hover .marquee__word { color: var(--cream); }
+  }
 
   .wla-tag-note { margin-top: 1.25rem; color: var(--navy); font-size: 0.95rem; }
 

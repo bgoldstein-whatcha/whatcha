@@ -30,6 +30,7 @@
 <link rel="icon" type="image/png" href="../assets/images/favicon.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="../assets/style.css" />
 <style>
@@ -109,7 +110,9 @@
     cursor: pointer;
     transition: background 0.15s;
   }
-  .store-card:hover { background: var(--sky-pale); }
+  @media (hover: hover) and (pointer: fine) {
+    .store-card:hover { background: var(--sky-pale); }
+  }
   .store-card.active { background: var(--yellow); border-left: 5px solid var(--coral); }
   .store-name { font-family: var(--font-ui); letter-spacing: 0.02em; font-size: 0.95rem; color: var(--navy); margin-bottom: 0.2rem; }
   .store-address { font-size: 0.85rem; color: var(--ink); line-height: 1.4; }
@@ -141,7 +144,9 @@
     letter-spacing: 0.02em;
     font-size: 0.8rem;
   }
-  .locator-hq-login:hover { opacity: 1; color: var(--coral-deep); }
+  @media (hover: hover) and (pointer: fine) {
+    .locator-hq-login:hover { opacity: 1; color: var(--coral-deep); }
+  }
 
   @media (max-width: 700px) {
     #locator-body { flex-direction: column; }
@@ -311,7 +316,14 @@ function addSidebarCard(store, index) {
     '<div class="store-address">' + store.address + '</div>' +
     (store.hours ? '<div class="store-hours">' + store.hours + '</div>' : '') +
     '<div class="store-distance" id="dist-' + index + '"></div>';
-  card.onclick = function () { selectStore(index); map.panTo([store._lat, store._lng]); map.setZoom(14); };
+  card.onclick = function () {
+    selectStore(index);
+    // only zoom IN if the map is currently more zoomed out than a
+    // "can read this pin" level — never snap zoom on a tap that's just
+    // selecting a store already comfortably in view (was jumping to a
+    // fixed zoom on every tap, which felt like the map randomly zooming)
+    map.setView([store._lat, store._lng], Math.max(map.getZoom(), 13));
+  };
   document.getElementById('store-list').appendChild(card);
 }
 
