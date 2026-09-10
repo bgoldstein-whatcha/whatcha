@@ -5,7 +5,10 @@
    restrained chrome, one confident focal point per section, real motion.
    ========================================================================== */
 
-@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap");
+/* Nunito Sans is loaded via a <link rel="stylesheet"> in each page's <head>
+   (next to the Google Fonts preconnects) rather than @import here — @import
+   inside a stylesheet is discovered only after the browser has already
+   fetched this file, serializing an extra round-trip before first paint. */
 
 @font-face {
   font-family: "FT Buck";
@@ -115,6 +118,7 @@ h3 { font-size: var(--fs-h3); }
 p { margin: 0; }
 
 a { color: inherit; text-decoration: none; }
+a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
 
 .container {
   max-width: var(--max-width);
@@ -148,7 +152,9 @@ a { color: inherit; text-decoration: none; }
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   box-shadow: var(--shadow-hard-sm);
 }
-.btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 rgba(5,38,197,0.9); }
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 rgba(5,38,197,0.9); }
+}
 .btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0 rgba(5,38,197,0.9); }
 .btn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
 
@@ -209,9 +215,11 @@ a { color: inherit; text-decoration: none; }
   transform-origin: left;
   transition: transform 0.2s ease;
 }
-.nav-links a:hover::after,
 .nav-links a:focus-visible::after,
 .nav-links a[aria-current="page"]::after { transform: scaleX(1); }
+@media (hover: hover) and (pointer: fine) {
+  .nav-links a:hover::after { transform: scaleX(1); }
+}
 
 .nav-toggle {
   display: none;
@@ -357,11 +365,13 @@ section { position: relative; }
   margin-bottom: 1.1rem;
 }
 .footer-grid ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-.footer-grid a:hover { color: var(--yellow); }
 .footer-social { display: flex; gap: 1.1rem; margin-top: 1.1rem; }
 .footer-social a { color: var(--cream); transition: color 0.15s ease, transform 0.15s ease; display: inline-flex; }
-.footer-social a:hover { color: var(--yellow); transform: translateY(-2px); }
 .footer-social svg { width: 24px; height: 24px; }
+@media (hover: hover) and (pointer: fine) {
+  .footer-grid a:hover { color: var(--yellow); }
+  .footer-social a:hover { color: var(--yellow); transform: translateY(-2px); }
+}
 .footer-bottom {
   display: flex;
   flex-wrap: wrap;
@@ -377,7 +387,9 @@ section { position: relative; }
   text-decoration: none;
   letter-spacing: 0.02em;
 }
-.footer-hq-login:hover { color: var(--yellow); }
+@media (hover: hover) and (pointer: fine) {
+  .footer-hq-login:hover { color: var(--yellow); }
+}
 
 /* ---------- form fields ---------- */
 .field { display: flex; flex-direction: column; gap: 0.4rem; text-align: left; }
@@ -561,7 +573,9 @@ section { position: relative; }
   gap: 1.4rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.flavor-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgba(5,38,197,0.9); }
+@media (hover: hover) and (pointer: fine) {
+  .flavor-card:hover { transform: translate(-3px, -3px); box-shadow: 9px 9px 0 rgba(5,38,197,0.9); }
+}
 .flavor-card--punch {
   background: linear-gradient(180deg, var(--teal) 0%, var(--teal) 44%, var(--teal-pale) 44%, var(--teal-pale) 100%);
 }
@@ -733,7 +747,9 @@ section { position: relative; }
   font-weight: 700;
   text-decoration: underline;
 }
-.faq__item p a:hover { color: var(--navy); }
+@media (hover: hover) and (pointer: fine) {
+  .faq__item p a:hover { color: var(--navy); }
+}
 
 /* ---------- signup ---------- */
 .signup { color: var(--navy); text-align: center; }
