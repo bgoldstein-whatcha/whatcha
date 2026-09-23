@@ -59,15 +59,33 @@
         if (submitBtn) submitBtn.disabled = true;
         if (status) status.textContent = "Sending…";
 
-        var data = new FormData(form);
-        data.append("_subject", "New " + (form.getAttribute("aria-label") || "Whatcha site") + " submission");
+        // Google Forms submissions (data-form-google) POST straight to that
+        // form's own /formResponse endpoint with entry.NNNNNNN field names.
+        // That's cross-origin and Google doesn't send CORS headers back, so
+        // the response is opaque — mode:"no-cors" is required just to avoid
+        // the browser blocking the request outright, and it means we can't
+        // actually read success/failure from the response. A resolved fetch
+        // promise here only proves the request went out, not that Google
+        // accepted it; a real network failure still rejects and hits catch.
+        var isGoogleForm = form.hasAttribute("data-form-google");
+
+        var body, headers;
+        if (isGoogleForm) {
+          body = new URLSearchParams(new FormData(form));
+          headers = { "Content-Type": "application/x-www-form-urlencoded" };
+        } else {
+          body = new FormData(form);
+          body.append("_subject", "New " + (form.getAttribute("aria-label") || "Whatcha site") + " submission");
+          headers = { Accept: "application/json" };
+        }
 
         fetch(form.getAttribute("data-form-endpoint"), {
           method: "POST",
-          headers: { Accept: "application/json" },
-          body: data
+          mode: isGoogleForm ? "no-cors" : "cors",
+          headers: headers,
+          body: body
         }).then(function (res) {
-          if (res.ok) {
+          if (isGoogleForm || res.ok) {
             if (status) status.textContent = "Thanks — we've got it. We'll be in touch soon!";
             form.reset();
           } else {

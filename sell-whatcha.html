@@ -90,7 +90,7 @@
       <li><a href="about.html">About</a></li>
       <li><a href="index.html#flavors">Flavors</a></li>
       <li><a href="faq.html">FAQs</a></li>
-      <li><a href="index.html#contact">Contact</a></li>
+      <li><a href="contact.html">Contact</a></li>
     </ul>
   </div>
 </header>
@@ -112,28 +112,27 @@
 
   <section class="form-section">
     <h2>Contact Details</h2>
-    <form data-form data-form-endpoint="https://formspree.io/f/xbdnoakr" aria-label="Sell Whatcha">
-      <div class="form-row">
-        <div class="field">
-          <label for="sw-first">First Name</label>
-          <input id="sw-first" name="first_name" type="text" />
-        </div>
-        <div class="field">
-          <label for="sw-last">Last Name</label>
-          <input id="sw-last" name="last_name" type="text" />
-        </div>
+    <!-- Google Form: "Sell Whatcha" — Name=entry.1520838584, Email=entry.1945761822, Company=entry.1364041103, Location=entry.1142931915, Message=entry.714873439 -->
+    <form data-form data-form-google data-form-endpoint="https://docs.google.com/forms/d/e/1FAIpQLSe_jE5ZclEyN4P6lij1_jDq9UNCU1B3AIsoDroogpZcsFOy7Q/formResponse" aria-label="Sell Whatcha">
+      <div class="field">
+        <label for="sw-name">Name</label>
+        <input id="sw-name" name="entry.1520838584" type="text" />
       </div>
       <div class="field">
         <label for="sw-email">Email *</label>
-        <input id="sw-email" name="email" type="email" required />
+        <input id="sw-email" name="entry.1945761822" type="email" required />
       </div>
       <div class="field">
         <label for="sw-company">Company</label>
-        <input id="sw-company" name="company" type="text" />
+        <input id="sw-company" name="entry.1364041103" type="text" />
+      </div>
+      <div class="field">
+        <label for="sw-location">Location</label>
+        <input id="sw-location" name="entry.1142931915" type="text" />
       </div>
       <div class="field">
         <label for="sw-message">Message</label>
-        <textarea id="sw-message" name="message" rows="5"></textarea>
+        <textarea id="sw-message" name="entry.714873439" rows="5"></textarea>
       </div>
       <button type="submit" class="btn">Send</button>
       <p class="form-status" data-form-status role="status"></p>
