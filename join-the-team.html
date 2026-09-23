@@ -92,7 +92,7 @@
       <li><a href="about.html">About</a></li>
       <li><a href="index.html#flavors">Flavors</a></li>
       <li><a href="faq.html">FAQs</a></li>
-      <li><a href="index.html#contact">Contact</a></li>
+      <li><a href="contact.html">Contact</a></li>
     </ul>
   </div>
 </header>
@@ -117,22 +117,23 @@
 
   <section class="form-section">
     <h2>Contact Details</h2>
-    <form data-form data-form-endpoint="https://formspree.io/f/mvzeabrn" aria-label="Join the team">
+    <!-- Google Form: "Whatcha join the team" — Name=entry.1722937816, Email=entry.1542631983, LinkedIn=entry.1485211653, Message=entry.904880295 -->
+    <form data-form data-form-google data-form-endpoint="https://docs.google.com/forms/d/e/1FAIpQLSc9riUAkrOAfvYwYgBuMiLzu-iEL8tdvLer8XypLXubsJMUwQ/formResponse" aria-label="Join the team">
       <div class="field">
         <label for="jt-name">Name *</label>
-        <input id="jt-name" name="name" type="text" required />
+        <input id="jt-name" name="entry.1722937816" type="text" required />
       </div>
       <div class="field">
         <label for="jt-email">Email *</label>
-        <input id="jt-email" name="email" type="email" required />
+        <input id="jt-email" name="entry.1542631983" type="email" required />
       </div>
       <div class="field">
         <label for="jt-linkedin">LinkedIn *</label>
-        <input id="jt-linkedin" name="linkedin" type="url" placeholder="https://linkedin.com/in/..." required />
+        <input id="jt-linkedin" name="entry.1485211653" type="url" placeholder="https://linkedin.com/in/..." required />
       </div>
       <div class="field">
         <label for="jt-message">Message</label>
-        <textarea id="jt-message" name="message" rows="5"></textarea>
+        <textarea id="jt-message" name="entry.904880295" rows="5"></textarea>
       </div>
       <button type="submit" class="btn">Submit</button>
       <p class="form-status" data-form-status role="status"></p>
