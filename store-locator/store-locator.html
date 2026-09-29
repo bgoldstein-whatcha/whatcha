@@ -50,7 +50,7 @@
   }
   .locator-back {
     font-family: var(--font-ui);
-    letter-spacing: 0.03em;
+    letter-spacing: 0.07em;
     color: var(--navy);
     background: var(--yellow);
     border: 3px solid var(--navy);
@@ -96,7 +96,7 @@
   #sidebar-header {
     padding: 1rem 1.1rem;
     font-family: var(--font-ui);
-    letter-spacing: 0.03em;
+    letter-spacing: 0.07em;
     font-size: 0.85rem;
     color: var(--navy);
     text-transform: uppercase;
@@ -114,7 +114,7 @@
     .store-card:hover { background: var(--sky-pale); }
   }
   .store-card.active { background: var(--yellow); border-left: 5px solid var(--coral); }
-  .store-name { font-family: var(--font-ui); letter-spacing: 0.02em; font-size: 0.95rem; color: var(--navy); margin-bottom: 0.2rem; }
+  .store-name { font-family: var(--font-ui); letter-spacing: 0.06em; font-size: 0.95rem; color: var(--navy); margin-bottom: 0.2rem; }
   .store-address { font-size: 0.85rem; color: var(--ink); line-height: 1.4; }
   .store-distance { font-size: 0.8rem; color: var(--coral-deep); font-weight: 700; margin-top: 0.3rem; }
   .store-hours { font-size: 0.8rem; color: var(--ink); opacity: 0.7; margin-top: 0.15rem; }
@@ -141,7 +141,7 @@
     color: var(--navy);
     opacity: 0.5;
     font-family: var(--font-ui);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.06em;
     font-size: 0.8rem;
   }
   @media (hover: hover) and (pointer: fine) {
@@ -154,6 +154,16 @@
     #zip-input { width: 130px; }
   }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.whatchadrinking.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Store Locator", "item": "https://www.whatchadrinking.com/store-locator/store-locator.html" }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -195,6 +205,15 @@
       <button id="find-btn" class="btn" onclick="searchByZip()">Search</button>
     </div>
   </div>
+
+  <!-- Static fallback for crawlers/clients that don't run the JS store list below
+       (the live, searchable list renders into #store-list via Supabase) -->
+  <noscript>
+    <p style="max-width:640px;margin:1.5rem auto;padding-inline:1rem;color:var(--ink);font-size:0.95rem;">
+      Whatcha, the spirits-based, ready-to-drink cocktail pouch (also called a boozy juice pouch, vodka juice pouch, or alcohol pouch), is launching first at the
+      Hartford HealthCare Amphitheater in Bridgeport, CT, with more retail locations being added this season. Search above by zip code for the closest spot carrying Spiked Peach Lemonade or Spiked Tropical Punch.
+    </p>
+  </noscript>
 
   <div id="locator-body">
     <div id="sidebar">

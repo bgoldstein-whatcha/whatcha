@@ -46,7 +46,7 @@
   .story-body p { color: var(--ink); }
   .signoff { margin-top: 0.5rem; }
   .signoff__img { width: 80px; height: auto; margin-bottom: 0.3rem; }
-  .signoff__name { font-family: var(--font-ui); letter-spacing: 0.03em; font-weight: 700; font-size: var(--fs-h3); color: var(--navy); margin: 0; }
+  .signoff__name { font-family: var(--font-ui); letter-spacing: 0.07em; font-weight: 700; font-size: var(--fs-h3); color: var(--navy); margin: 0; }
   .signoff__title { font-family: "Nunito Sans", sans-serif; font-weight: 600; font-size: var(--fs-small); color: var(--ink); opacity: 0.7; margin: 0.2rem 0 0; }
 
   .photo-row { display: grid; gap: clamp(0.75rem, 2vw, 1.25rem); margin-block: clamp(2rem, 5vw, 3rem); margin-inline: auto; }
@@ -63,6 +63,16 @@
     .photo-row--four { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.whatchadrinking.com/" },
+    { "@type": "ListItem", "position": 2, "name": "About", "item": "https://www.whatchadrinking.com/about.html" }
+  ]
+}
+</script>
 </head>
 <body>
 
@@ -120,7 +130,7 @@
 
       <div class="story-body">
         <p>Our entire generation grew up with a juice pouch in every lunchbox. The pouch isn't just packaging. It's a memory. It's fun, it's easy, it's made to be shared. People were already remixing that nostalgia into something a little more grown up. All it needed was someone to do it right.</p>
-        <p>So we did. Whatcha is a spirits-based, ready-to-drink cocktail pouch, the grown-up version of the pouch drinks you grew up with. Spiked Peach Lemonade and Spiked Tropical Punch, 10% ABV, 3 grams of added sugar, crafted with award-winning bartender Tom Macy. Built to be fun.</p>
+        <p>So we did. Whatcha is a spirits-based, ready-to-drink cocktail pouch — people call it a boozy juice pouch, a vodka juice pouch, an alcohol pouch, whatever fits — the grown-up version of the pouch drinks you grew up with. Spiked Peach Lemonade and Spiked Tropical Punch, 10% ABV, 3 grams of added sugar, crafted with award-winning bartender Tom Macy. Built to be fun.</p>
         <p>Squeeze the Day!</p>
 
         <div class="signoff">
@@ -161,7 +171,7 @@
         </ul>
       </div>
       <div>
-        <h4>Contact Us</h4>
+        <h4><a href="contact.html">Contact Us</a></h4>
         <ul>
           <li><a href="mailto:hello@whatchadrinking.com">hello@whatchadrinking.com</a></li>
           <li><a href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener">@drinkwhatcha</a></li>
