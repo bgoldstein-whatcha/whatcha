@@ -106,7 +106,7 @@ h1 {
   color: var(--navy);
 }
 h2, h3, h4 {
-  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-family: var(--font-ui); letter-spacing: 0.07em;
   font-weight: 700;
   line-height: 1.15;
   margin: 0;
@@ -140,7 +140,7 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-family: var(--font-ui); letter-spacing: 0.07em;
   font-weight: 700;
   font-size: clamp(1rem, 0.3vw + 0.95rem, 1.15rem);
   padding: 0.9em 2.1em;
@@ -198,7 +198,7 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   padding: 0;
 }
 .nav-links a {
-  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-family: var(--font-ui); letter-spacing: 0.07em;
   font-weight: 700;
   color: var(--yellow);
   font-size: clamp(0.95rem, 0.5vw + 0.8rem, 1.1rem);
@@ -278,7 +278,7 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   font-weight: 700;
   color: var(--navy);
   font-size: clamp(0.95rem, 0.6vw + 0.7rem, 1.1rem);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.10em;
   white-space: nowrap;
 }
 .marquee__star {
@@ -321,7 +321,7 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
 .age-gate__card h2 {
   color: var(--cream);
   font-size: clamp(1.15rem, 2vw, 1.4rem);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
   margin-bottom: 1.5rem;
 }
@@ -506,7 +506,7 @@ section { position: relative; }
   z-index: 1;
 }
 .hero__tag {
-  font-family: var(--font-ui); letter-spacing: 0.03em;
+  font-family: var(--font-ui); letter-spacing: 0.07em;
   font-weight: 700;
   font-size: var(--fs-h3);
   color: var(--navy);
@@ -717,7 +717,7 @@ section { position: relative; }
 .faq__item summary {
   font-family: var(--font-ui);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
   color: var(--navy);
   font-size: var(--fs-body-lg);
   cursor: pointer;
