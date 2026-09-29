@@ -22,10 +22,12 @@
         sessionStorage.setItem(AGE_KEY, "true");
         gate.hidden = true;
         document.body.style.overflow = "";
+        if (typeof gtag === "function") gtag("event", "age_gate_confirm", { result: "yes" });
       });
     });
     gate.querySelectorAll("[data-age-no]").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        if (typeof gtag === "function") gtag("event", "age_gate_confirm", { result: "no" });
         window.location.href = "https://www.responsibility.org/";
       });
     });
@@ -87,6 +89,12 @@
         }).then(function (res) {
           if (isGoogleForm || res.ok) {
             if (status) status.textContent = "Thanks — we've got it. We'll be in touch soon!";
+            if (typeof gtag === "function") {
+              gtag("event", "form_submit_success", {
+                form_id: form.id || null,
+                form_name: form.getAttribute("aria-label") || "Whatcha site"
+              });
+            }
             form.reset();
           } else {
             if (status) status.textContent = "Something went wrong — please email hello@whatchadrinking.com directly.";

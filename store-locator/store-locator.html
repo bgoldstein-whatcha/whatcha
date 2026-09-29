@@ -410,6 +410,7 @@ async function geocodeAndRender(storesToRender) {
 function searchByZip() {
   var zip = document.getElementById('zip-input').value.trim();
   if (!zip) { geocodeAndRender(STORES); return; }
+  if (typeof gtag === 'function') gtag('event', 'store_locator_search');
 
   geocode(zip, true).then(function (center) {
     if (!center) { alert('Could not find that zip code.'); return; }
