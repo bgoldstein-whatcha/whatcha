@@ -709,7 +709,7 @@ const App = {
 
   /* ---------------- LEADS & RECOMMENDATIONS ---------------- */
   POI_ICON: { university: "🎓", arena: "🏟️", venue: "🎪", casino: "🎰", nightlife: "🍸", tourist: "🏖️", city: "🏙️" },
-  LEAD_STATUS: { to_visit: "To visit", contacted: "Contacted", won: "Won", passed: "Passed" },
+  LEAD_STATUS: { to_visit: "To visit", visited: "Visited", contacted: "Contacted", won: "Won", passed: "Passed" },
   DEFAULT_OUTREACH: {
     subject: "Introducing Whatcha — spirits-based, ready-to-drink cocktail pouches",
     body: "Hi {{contact}},\n\nMy name is Ben Goldstein, founder of Whatcha — a spirits-based, ready-to-drink cocktail pouch (Spiked Peach Lemonade & Spiked Tropical Punch, 10% ABV). I'd love to get Whatcha on the shelf at {{store}}.\n\nHappy to drop off samples or set up a quick call, whatever's easiest.\n\nThanks,\nBen\nWhatcha Drinking?\nhello@whatchadrinking.com",
@@ -729,7 +729,7 @@ const App = {
     this._topPoi = null; // panel reloads for the top/filtered zone after render
     const recs = DB.recommendations();
     const leads = DB.leads();
-    const openLeads = leads.filter((l) => l.status === "to_visit" || l.status === "contacted");
+    const openLeads = leads.filter((l) => l.status === "to_visit" || l.status === "visited" || l.status === "contacted");
     const closedLeads = leads.filter((l) => l.status === "won" || l.status === "passed");
 
     const recCard = (r) => {
@@ -756,22 +756,7 @@ const App = {
       </div>`;
     };
 
-    const leadRow = (l) => {
-      const cov = l.state ? DB.coverageForCounty(l.state, DB.countyForCity(l.city, l.state)) : null;
-      const outside = l.city && l.state && !cov;
-      return `<tr class="clickable" data-loc="${esc(((l.city || "") + " " + (l.state || "") + " " + l.name).toLowerCase())}" onclick="App.leadDetail('${l.id}')">
-        <td><strong>${esc(l.name)}</strong>${l.source === "engine" ? ' <span class="chip chip--sm chip--exported">rec</span>' : ""}${l.email ? ' <span class="chip chip--sm" title="Has an email on file">✉️</span>' : ""}${(l.notes_log || []).length ? ` <span class="chip chip--sm" title="${(l.notes_log || []).length} note(s)">📝 ${(l.notes_log || []).length}</span>` : ""}<div class="muted" style="font-size:12px">${esc(l.type || "")}</div></td>
-        <td>${esc(l.city || "")}${l.city ? ", " : ""}${l.state || ""}${outside ? ' <span class="chip chip--sm" style="background:#ffe0e0" title="No distributor covers this area">no dist.</span>' : ""}</td>
-        <td><span class="chip chip--sm chip--${l.priority}">${l.priority || "—"}</span></td>
-        <td>
-          <select class="lead-status" onclick="event.stopPropagation()" onchange="App.setLeadStatus('${l.id}', this.value)">
-            ${Object.entries(this.LEAD_STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? "selected" : ""}>${v}</option>`).join("")}
-          </select>
-        </td>
-        <td class="muted" style="font-size:12px;max-width:220px">${esc(l.note || "")}</td>
-        <td class="right" style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="${this.leadMapsUrl(l)}" target="_blank" rel="noopener" title="Navigate in Apple Maps" onclick="event.stopPropagation()">🧭</a> <button class="btn btn--ghost btn--sm" onclick="event.stopPropagation();App.leadModal('${l.id}')">Edit</button></td>
-      </tr>`;
-    };
+    const leadRow = (l) => this.leadRowHTML(l);
 
     const html = `
       <p class="muted" style="margin-top:0;max-width:760px">Real <strong>stores to walk into</strong> — liquor stores, bottle shops, bars & markets — pulled live from OpenStreetMap and ranked for you, <strong>inside your distributors' coverage only</strong>. Scores use crowd-sourced signals that track the young-adult crowd (cocktail bars, breweries, nightclubs, late-night hours) plus proximity to campuses, arenas & nightlife districts, your whitespace, and nearby momentum. Filter by city/state below; everything re-ranks as you add accounts.</p>
@@ -809,11 +794,11 @@ const App = {
         </table></div>
       </details>` : ""}
 
-      <div class="section-title" style="margin-top:28px">📋 My leads ${openLeads.length ? `<span class="muted">· ${openLeads.length} open</span>` : ""}</div>
+      <div class="section-title" id="leads-open-title" style="margin-top:28px">📋 My leads ${openLeads.length ? `<span class="muted">· ${openLeads.length} open</span>` : ""}</div>
       <div class="panel">
         <div class="table-wrap"><table class="data">
           <thead><tr><th class="no-sort">Lead</th><th class="no-sort">Location</th><th class="no-sort">Priority</th><th class="no-sort">Status</th><th class="no-sort">Note</th><th class="no-sort"></th></tr></thead>
-          <tbody>${(openLeads.length ? openLeads : []).map(leadRow).join("") || `<tr><td colspan="6" class="t-empty">No open leads. Add one, or promote a recommendation above.</td></tr>`}</tbody>
+          <tbody id="leads-open-body">${(openLeads.length ? openLeads : []).map(leadRow).join("") || `<tr><td colspan="6" class="t-empty">No open leads. Add one, or promote a recommendation above.</td></tr>`}</tbody>
         </table></div>
       </div>
 
@@ -822,7 +807,7 @@ const App = {
         <summary style="cursor:pointer;font-family:var(--font-ui);color:var(--muted);margin-bottom:10px">Closed leads (${closedLeads.length}) — won & passed</summary>
         <div class="panel"><div class="table-wrap"><table class="data">
           <thead><tr><th class="no-sort">Lead</th><th class="no-sort">Location</th><th class="no-sort">Priority</th><th class="no-sort">Status</th><th class="no-sort">Note</th><th class="no-sort"></th></tr></thead>
-          <tbody>${closedLeads.map(leadRow).join("")}</tbody>
+          <tbody id="leads-closed-body">${closedLeads.map(leadRow).join("")}</tbody>
         </table></div></div>
       </details>` : ""}`;
     $("#view").innerHTML = html;
@@ -1210,30 +1195,77 @@ const App = {
           <td><strong>${esc(s.name)}</strong>${s.website ? ` <a href="${esc(s.website)}" target="_blank" rel="noopener" title="Website" onclick="event.stopPropagation()">↗</a>` : ""}${s.addr ? `<div class="muted" style="font-size:12px">${esc(s.addr)}</div>` : ""}${(s.signals && s.signals.length) ? `<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">${s.signals.map((sig) => `<span class="chip chip--sm chip--lead">${esc(sig)}</span>`).join("")}</div>` : ""}</td>
           <td><span class="chip chip--sm">${esc(s.typeLabel)}</span></td>
           <td class="num mono">${s.distMi.toFixed(1)} mi</td>
-          <td class="right" style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="${this.appleMapsUrl(s.lat, s.lon, s.name)}" target="_blank" rel="noopener">🧭 Maps</a> <button class="btn btn--primary btn--sm" id="scout-add-${i}" onclick="App.addScoutLead(${i})">＋ Lead</button></td>
+          <td class="right" style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="${this.appleMapsUrl(s.lat, s.lon, s.name)}" target="_blank" rel="noopener">🧭 Maps</a> <button class="btn btn--primary btn--sm" id="scout-add-${i}" onclick="App.scoutStoreDetail(${i},'scout')">Store info</button></td>
         </tr>`).join("")}</tbody>
       </table></div>`;
   },
-  _makeStoreLead(store, ctx, idx) {
+  // Resolve the scouted store + context behind a tile/row, whichever panel it's in.
+  _resolveScoutStore(idx, panel) {
+    if (panel === "top") {
+      const poi = POIS.find((p) => p.id === this._topPoi); if (!poi) return null;
+      const store = (this._scoutCache["poi:" + this._topPoi] || [])[idx]; if (!store) return null;
+      return { store, ctx: { name: poi.name, city: poi.city, state: poi.state } };
+    }
+    const { cacheKey, ctx } = this._scoutCtx || {};
+    const store = (this._scoutCache[cacheKey] || [])[idx]; if (!store) return null;
+    return { store, ctx };
+  },
+  // Viewing a scouted store no longer adds it to your leads by itself — it opens
+  // this info card. It only becomes a lead once you jot a note or mark a status.
+  scoutStoreDetail(idx, panel) {
+    const resolved = this._resolveScoutStore(idx, panel); if (!resolved) return;
+    const { store, ctx } = resolved;
+    const city = store.city || (ctx && ctx.city) || "";
+    const existing = DB.leads().find((l) => l.name.toLowerCase() === store.name.toLowerCase() && (l.city || "") === city);
+    if (existing) { this.leadDetail(existing.id); return; }
+    const sig = (store.signals && store.signals.length) ? store.signals.join(" · ") : "";
+    this.modal({
+      title: store.name,
+      bodyHTML: `
+        <p style="margin:0 0 6px"><span class="chip chip--sm">${esc(store.typeLabel)}</span> <span class="muted">${store.distMi.toFixed(1)} mi${ctx && ctx.name ? " from " + esc(ctx.name) : ""}</span></p>
+        ${store.addr ? `<p style="margin:4px 0"><strong>Address:</strong> ${esc(store.addr)}${city ? ", " + esc(city) : ""}</p>` : ""}
+        ${sig ? `<p style="margin:4px 0" class="muted">${esc(sig)}</p>` : ""}
+        <div class="btn-row" style="margin:10px 0">
+          <a class="btn btn--ghost btn--sm" href="${this.appleMapsUrl(store.lat, store.lon, store.name)}" target="_blank" rel="noopener">🧭 Navigate</a>
+          ${store.website ? `<a class="btn btn--ghost btn--sm" href="${esc(store.website)}" target="_blank" rel="noopener">↗ Website</a>` : ""}
+        </div>
+        <div class="field--row">
+          <div class="field"><label>Contact name</label><input id="sd-contact" placeholder="Who you spoke with"></div>
+          <div class="field"><label>Phone</label><input id="sd-phone" value="${esc(store.phone || "")}"></div>
+        </div>
+        <div class="field"><label>Email</label><input id="sd-email" value="${esc(store.email || "")}" placeholder="buyer@store.com"></div>
+        <div class="field"><label>Note</label><textarea id="sd-note" placeholder="What happened when you stopped by or talked to them…"></textarea></div>
+        <p class="hint" style="margin-top:-4px">Add a note or contact info and mark it below — that's what adds it to your leads list. Just looking? Close this with nothing added and it won't be saved.</p>`,
+      cancelLabel: "Close",
+      extraFoot: `<button class="btn btn--ghost btn--sm" onclick="App._commitScoutLead(${idx},'${panel}','visited')">🚶 Mark visited</button><button class="btn btn--coral btn--sm" onclick="App._commitScoutLead(${idx},'${panel}','contacted')">💬 Mark contacted</button>`,
+    });
+  },
+  _commitScoutLead(idx, panel, status) {
+    const resolved = this._resolveScoutStore(idx, panel); if (!resolved) return;
+    const { store, ctx } = resolved;
     const city = store.city || (ctx && ctx.city) || "";
     const state = (ctx && ctx.state) || "";
-    if (DB.leads().some((l) => l.name.toLowerCase() === store.name.toLowerCase() && (l.city || "") === city)) { this.toast("Already in your leads", "err"); return false; }
+    if (DB.leads().some((l) => l.name.toLowerCase() === store.name.toLowerCase() && (l.city || "") === city)) { this.toast("Already in your leads", "err"); this.closeModal(); return; }
+    const contact_name = ($("#sd-contact") || {}).value ? $("#sd-contact").value.trim() : "";
+    const email = ($("#sd-email") || {}).value ? $("#sd-email").value.trim() : (store.email || "");
+    const phone = ($("#sd-phone") || {}).value ? $("#sd-phone").value.trim() : (store.phone || "");
+    const noteText = ($("#sd-note") || {}).value ? $("#sd-note").value.trim() : "";
     const cov = state ? DB.coverageForCounty(state, DB.countyForCity(city, state)) : null;
     const sig = (store.signals && store.signals.length) ? " [" + store.signals.join(", ") + "]" : "";
-    DB.insert("leads", {
+    const context = `${store.typeLabel}${ctx && ctx.name ? " · ~" + store.distMi.toFixed(1) + " mi from " + ctx.name : ""}.${store.addr ? " " + store.addr + "." : ""}${sig}`;
+    const lead = DB.insert("leads", {
       id: "lead_" + Date.now().toString(36) + idx, name: store.name, type: store.leadType,
-      city, state, status: "to_visit", priority: "high", address: store.addr || "",
-      lat: store.lat, lng: store.lon, email: store.email || "", phone: store.phone || "", website: store.website || "",
-      note: `${store.typeLabel}${ctx && ctx.name ? " · ~" + store.distMi.toFixed(1) + " mi from " + ctx.name : ""}.${store.addr ? " " + store.addr + "." : ""}${sig}`,
+      city, state, status, priority: "high", address: store.addr || "",
+      lat: store.lat, lng: store.lon, email, phone, contact_name, website: store.website || "",
+      note: context,
       source: "scout", distributor_id: cov ? cov.id : null, created_at: new Date().toISOString().slice(0, 10),
     });
-    this.toast(`${store.name} added to leads`);
-    return true;
-  },
-  addScoutLead(idx) {
-    const { cacheKey, ctx } = this._scoutCtx || {};
-    const store = (this._scoutCache[cacheKey] || [])[idx]; if (!store) return;
-    if (this._makeStoreLead(store, ctx, idx)) { const btn = $(`#scout-add-${idx}`); if (btn) { btn.textContent = "✓ Added"; btn.disabled = true; } }
+    if (noteText) DB.addNote(lead.id, noteText, "leads");
+    this.closeModal();
+    this.toast(`${store.name} added to your leads — marked ${this.LEAD_STATUS[status].toLowerCase()}`);
+    const btnId = panel === "top" ? `#top-add-${idx}` : `#scout-add-${idx}`;
+    const btn = $(btnId); if (btn) { btn.textContent = "✓ Added"; btn.disabled = true; }
+    this.renderLeadsListOnly();
   },
 
   /* ---- prominent inline "stores to hit" panel (follows the top / filtered zone) ---- */
@@ -1279,18 +1311,40 @@ const App = {
             </div>
             <div class="store-tile__act">
               <a class="btn btn--ghost btn--sm" href="${this.appleMapsUrl(s.lat, s.lon, s.name)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">🧭 Maps</a>
-              <button class="btn btn--primary btn--sm" id="top-add-${i}" onclick="App.addTopLead(${i})">＋ Lead</button>
+              <button class="btn btn--primary btn--sm" id="top-add-${i}" onclick="App.scoutStoreDetail(${i},'top')">Store info</button>
             </div>
           </div>`).join("")}
       </div>`;
   },
-  addTopLead(idx) {
-    const poi = POIS.find((p) => p.id === this._topPoi); if (!poi) return;
-    const store = (this._scoutCache["poi:" + this._topPoi] || [])[idx]; if (!store) return;
-    const ctx = { name: poi.name, city: poi.city, state: poi.state };
-    if (this._makeStoreLead(store, ctx, idx)) { const btn = $(`#top-add-${idx}`); if (btn) { btn.textContent = "✓ Added"; btn.disabled = true; } this.renderLeadsListOnly(); }
+  leadRowHTML(l) {
+    const cov = l.state ? DB.coverageForCounty(l.state, DB.countyForCity(l.city, l.state)) : null;
+    const outside = l.city && l.state && !cov;
+    return `<tr class="clickable" data-loc="${esc(((l.city || "") + " " + (l.state || "") + " " + l.name).toLowerCase())}" onclick="App.leadDetail('${l.id}')">
+      <td><strong>${esc(l.name)}</strong>${l.source === "engine" ? ' <span class="chip chip--sm chip--exported">rec</span>' : ""}${l.email ? ' <span class="chip chip--sm" title="Has an email on file">✉️</span>' : ""}${(l.notes_log || []).length ? ` <span class="chip chip--sm" title="${(l.notes_log || []).length} note(s)">📝 ${(l.notes_log || []).length}</span>` : ""}<div class="muted" style="font-size:12px">${esc(l.type || "")}</div></td>
+      <td>${esc(l.city || "")}${l.city ? ", " : ""}${l.state || ""}${outside ? ' <span class="chip chip--sm" style="background:#ffe0e0" title="No distributor covers this area">no dist.</span>' : ""}</td>
+      <td><span class="chip chip--sm chip--${l.priority}">${l.priority || "—"}</span></td>
+      <td>
+        <select class="lead-status" onclick="event.stopPropagation()" onchange="App.setLeadStatus('${l.id}', this.value)">
+          ${Object.entries(this.LEAD_STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? "selected" : ""}>${v}</option>`).join("")}
+        </select>
+      </td>
+      <td class="muted" style="font-size:12px;max-width:220px">${esc(l.note || "")}</td>
+      <td class="right" style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="${this.leadMapsUrl(l)}" target="_blank" rel="noopener" title="Navigate in Apple Maps" onclick="event.stopPropagation()">🧭</a> <button class="btn btn--ghost btn--sm" onclick="event.stopPropagation();App.leadModal('${l.id}')">Edit</button></td>
+    </tr>`;
   },
-  renderLeadsListOnly() { /* placeholder — full re-render happens on nav; keep panel stable */ },
+  // Refreshes just the "My leads" table in place — used after adding a lead from the
+  // top-stores panel, so the scout panel above (with its live fetch) doesn't reset.
+  renderLeadsListOnly() {
+    const leads = DB.leads();
+    const openLeads = leads.filter((l) => l.status === "to_visit" || l.status === "visited" || l.status === "contacted");
+    const closedLeads = leads.filter((l) => l.status === "won" || l.status === "passed");
+    const openTitle = $("#leads-open-title");
+    if (openTitle) openTitle.innerHTML = `📋 My leads ${openLeads.length ? `<span class="muted">· ${openLeads.length} open</span>` : ""}`;
+    const openBody = $("#leads-open-body");
+    if (openBody) openBody.innerHTML = (openLeads.length ? openLeads : []).map((l) => this.leadRowHTML(l)).join("") || `<tr><td colspan="6" class="t-empty">No open leads. Add one, or promote a recommendation above.</td></tr>`;
+    const closedBody = $("#leads-closed-body");
+    if (closedBody) closedBody.innerHTML = closedLeads.map((l) => this.leadRowHTML(l)).join("");
+  },
 
   /* ---------------- DISTRIBUTORS & EXPORTS ---------------- */
   renderDistributors() {
