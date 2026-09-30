@@ -614,6 +614,7 @@ const App = {
         <p style="margin:4px 0"><strong>Distributor:</strong> ${d ? esc(d.name) : "— none assigned —"}</p>
         ${s.contact_name || s.email || s.phone ? `<p style="margin:4px 0"><strong>Contact:</strong> ${esc(s.contact_name || "")} ${s.email ? "· " + esc(s.email) : ""} ${s.phone ? "· " + esc(s.phone) : ""}</p>` : ""}
         ${s.notes ? `<p style="margin:8px 0" class="muted">📝 ${esc(s.notes)}</p>` : ""}
+        ${s.email ? `<div class="btn-row" style="margin:12px 0"><button class="btn btn--coral btn--sm" onclick="App.outreachEmail('${id}','stores')">✉️ Send outreach email</button></div>` : ""}
 
         <div class="section-title">Notes &amp; activity</div>
         <div class="note-add">
@@ -709,6 +710,20 @@ const App = {
   /* ---------------- LEADS & RECOMMENDATIONS ---------------- */
   POI_ICON: { university: "🎓", arena: "🏟️", venue: "🎪", casino: "🎰", nightlife: "🍸", tourist: "🏖️", city: "🏙️" },
   LEAD_STATUS: { to_visit: "To visit", contacted: "Contacted", won: "Won", passed: "Passed" },
+  DEFAULT_OUTREACH: {
+    subject: "Introducing Whatcha — spirits-based, ready-to-drink cocktail pouches",
+    body: "Hi {{contact}},\n\nMy name is Ben Goldstein, founder of Whatcha — a spirits-based, ready-to-drink cocktail pouch (Spiked Peach Lemonade & Spiked Tropical Punch, 10% ABV). I'd love to get Whatcha on the shelf at {{store}}.\n\nHappy to drop off samples or set up a quick call, whatever's easiest.\n\nThanks,\nBen\nWhatcha Drinking?\nhello@whatchadrinking.com",
+  },
+  // Opens the user's own mail app with a prefilled draft — nothing is sent automatically.
+  outreachEmail(id, coll = "leads") {
+    const rec = coll === "leads" ? DB.lead(id) : DB.store(id); if (!rec) return;
+    if (!rec.email) { this.toast("No email on file — add one first", "err"); return; }
+    const tpl = DB.settings().outreach_template || this.DEFAULT_OUTREACH;
+    const fill = (s) => (s || "").replace(/\{\{\s*store\s*\}\}/gi, rec.name || "").replace(/\{\{\s*contact\s*\}\}/gi, rec.contact_name || "there");
+    const subject = encodeURIComponent(fill(tpl.subject));
+    const body = encodeURIComponent(fill(tpl.body));
+    window.location.href = `mailto:${rec.email}?subject=${subject}&body=${body}`;
+  },
 
   renderLeads() {
     this._topPoi = null; // panel reloads for the top/filtered zone after render
@@ -744,17 +759,17 @@ const App = {
     const leadRow = (l) => {
       const cov = l.state ? DB.coverageForCounty(l.state, DB.countyForCity(l.city, l.state)) : null;
       const outside = l.city && l.state && !cov;
-      return `<tr data-loc="${esc(((l.city || "") + " " + (l.state || "") + " " + l.name).toLowerCase())}">
-        <td><strong>${esc(l.name)}</strong>${l.source === "engine" ? ' <span class="chip chip--sm chip--exported">rec</span>' : ""}<div class="muted" style="font-size:12px">${esc(l.type || "")}</div></td>
+      return `<tr class="clickable" data-loc="${esc(((l.city || "") + " " + (l.state || "") + " " + l.name).toLowerCase())}" onclick="App.leadDetail('${l.id}')">
+        <td><strong>${esc(l.name)}</strong>${l.source === "engine" ? ' <span class="chip chip--sm chip--exported">rec</span>' : ""}${l.email ? ' <span class="chip chip--sm" title="Has an email on file">✉️</span>' : ""}${(l.notes_log || []).length ? ` <span class="chip chip--sm" title="${(l.notes_log || []).length} note(s)">📝 ${(l.notes_log || []).length}</span>` : ""}<div class="muted" style="font-size:12px">${esc(l.type || "")}</div></td>
         <td>${esc(l.city || "")}${l.city ? ", " : ""}${l.state || ""}${outside ? ' <span class="chip chip--sm" style="background:#ffe0e0" title="No distributor covers this area">no dist.</span>' : ""}</td>
         <td><span class="chip chip--sm chip--${l.priority}">${l.priority || "—"}</span></td>
         <td>
-          <select class="lead-status" onchange="App.setLeadStatus('${l.id}', this.value)">
+          <select class="lead-status" onclick="event.stopPropagation()" onchange="App.setLeadStatus('${l.id}', this.value)">
             ${Object.entries(this.LEAD_STATUS).map(([k, v]) => `<option value="${k}" ${l.status === k ? "selected" : ""}>${v}</option>`).join("")}
           </select>
         </td>
         <td class="muted" style="font-size:12px;max-width:220px">${esc(l.note || "")}</td>
-        <td class="right" style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="${this.leadMapsUrl(l)}" target="_blank" rel="noopener" title="Navigate in Apple Maps">🧭</a> <button class="btn btn--ghost btn--sm" onclick="App.leadModal('${l.id}')">Edit</button></td>
+        <td class="right" style="white-space:nowrap"><a class="btn btn--ghost btn--sm" href="${this.leadMapsUrl(l)}" target="_blank" rel="noopener" title="Navigate in Apple Maps" onclick="event.stopPropagation()">🧭</a> <button class="btn btn--ghost btn--sm" onclick="event.stopPropagation();App.leadModal('${l.id}')">Edit</button></td>
       </tr>`;
     };
 
@@ -853,6 +868,54 @@ const App = {
     else this.toast("Lead updated");
     this.renderLeads();
   },
+  leadDetail(id) {
+    const l = DB.lead(id); if (!l) return;
+    const cov = l.state ? DB.coverageForCounty(l.state, DB.countyForCity(l.city, l.state)) : null;
+    this.modal({
+      title: l.name, wide: true,
+      bodyHTML: `
+        <p style="margin:0 0 6px"><span class="chip chip--sm chip--${l.priority}">${esc(l.priority || "—")} priority</span> &nbsp;<span class="chip chip--sm">${this.LEAD_STATUS[l.status] || l.status}</span> &nbsp;<span class="muted">${esc(l.type || "")}</span></p>
+        <p style="margin:4px 0"><strong>Location:</strong> ${esc(l.address ? l.address + ", " : "")}${esc(l.city || "")}${l.city ? ", " : ""}${l.state || ""}</p>
+        ${cov ? `<p style="margin:4px 0"><strong>Distributor coverage:</strong> ${esc(cov.name)}</p>` : ""}
+        ${l.contact_name || l.email || l.phone ? `<p style="margin:4px 0"><strong>Contact:</strong> ${esc(l.contact_name || "")} ${l.email ? "· " + esc(l.email) : ""} ${l.phone ? "· " + esc(l.phone) : ""}</p>` : ""}
+        ${l.website ? `<p style="margin:4px 0"><strong>Website:</strong> <a href="${esc(l.website)}" target="_blank" rel="noopener">${esc(l.website)}</a></p>` : ""}
+        ${l.note ? `<p style="margin:8px 0" class="muted">📝 ${esc(l.note)}</p>` : ""}
+        <div class="btn-row" style="margin:12px 0">
+          <a class="btn btn--ghost btn--sm" href="${this.leadMapsUrl(l)}" target="_blank" rel="noopener">🧭 Navigate</a>
+          ${l.email ? `<button class="btn btn--coral btn--sm" onclick="App.outreachEmail('${id}','leads')">✉️ Send outreach email</button>` : `<span class="muted" style="font-size:13px">No email on file — add one in Edit to enable outreach email.</span>`}
+        </div>
+
+        <div class="section-title">Notes &amp; activity</div>
+        <div class="note-add">
+          <textarea id="lead-note-input" placeholder="Log who you met with, what they said, next steps…"></textarea>
+          <button class="btn btn--primary btn--sm" onclick="App.addLeadNote('${id}')">＋ Add note</button>
+        </div>
+        <div class="note-log">
+          ${(l.notes_log || []).map((n) => `
+            <div class="note-item">
+              <div class="note-item__meta">${new Date(n.at).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                <button class="note-del" title="Delete note" onclick="App.deleteLeadNote('${id}','${n.id}')">✕</button>
+              </div>
+              <div class="note-item__text">${esc(n.text)}</div>
+            </div>`).join("") || `<p class="muted" style="font-size:13px;margin:4px 0">No notes yet — add your first above.</p>`}
+        </div>`,
+      saveLabel: "Edit lead",
+      onSave: () => { this.closeModal(); this.leadModal(id); return true; },
+      cancelLabel: "Close",
+    });
+  },
+  addLeadNote(id) {
+    const el = $("#lead-note-input"); if (!el) return;
+    const text = el.value.trim();
+    if (!text) { this.toast("Type a note first", "err"); el.focus(); return; }
+    DB.addNote(id, text, "leads");
+    this.toast("Note added");
+    this.leadDetail(id);
+  },
+  deleteLeadNote(id, noteId) {
+    DB.deleteNote(id, noteId, "leads");
+    this.leadDetail(id);
+  },
   leadModal(id) {
     const l = id ? DB.lead(id) : null;
     const types = ["Retail", "Bar/Restaurant", "Venue", "Grocery", "Liquor Store", "Venue / Bar", "Retail / Bar", "Other"];
@@ -871,6 +934,11 @@ const App = {
           <div class="field"><label>Priority</label><select id="l-prio">${prios.map((p) => `<option ${v("priority", "high") === p ? "selected" : ""}>${p}</option>`).join("")}</select></div>
         </div>
         <div class="field"><label>Status</label><select id="l-status">${Object.entries(this.LEAD_STATUS).map(([k, vv]) => `<option value="${k}" ${v("status", "to_visit") === k ? "selected" : ""}>${vv}</option>`).join("")}</select></div>
+        <div class="field--row">
+          <div class="field"><label>Contact name</label><input id="l-contact" value="${esc(v("contact_name"))}"></div>
+          <div class="field"><label>Phone</label><input id="l-phone" value="${esc(v("phone"))}"></div>
+        </div>
+        <div class="field"><label>Email</label><input id="l-email" value="${esc(v("email"))}" placeholder="buyer@store.com"></div>
         <div class="field"><label>Note</label><textarea id="l-note" placeholder="Why this one, who to ask for, when to go…">${esc(v("note"))}</textarea></div>
         ${l ? "" : `<p class="hint" id="l-cov" style="margin-top:-4px"></p>`}`,
       onOpen: () => {
@@ -888,7 +956,7 @@ const App = {
       onSave: () => {
         const name = $("#l-name").value.trim();
         if (!name) { this.toast("Lead name is required", "err"); return false; }
-        const payload = { name, city: $("#l-city").value.trim(), state: $("#l-state").value, type: $("#l-type").value, priority: $("#l-prio").value, status: $("#l-status").value, note: $("#l-note").value.trim() };
+        const payload = { name, city: $("#l-city").value.trim(), state: $("#l-state").value, type: $("#l-type").value, priority: $("#l-prio").value, status: $("#l-status").value, note: $("#l-note").value.trim(), contact_name: $("#l-contact").value.trim(), phone: $("#l-phone").value.trim(), email: $("#l-email").value.trim() };
         if (l) { DB.update("leads", id, payload); this.toast("Lead updated"); }
         else { payload.source = "manual"; payload.created_at = new Date().toISOString().slice(0, 10); DB.insert("leads", payload); this.toast("Lead added"); }
         this.renderLeads(); return true;
@@ -1063,7 +1131,7 @@ const App = {
       if (anchorFit) { signalPts += anchorFit.pts; signals.push(anchorFit.tag); }
 
       const score = info.t * 10 + signalPts + Math.max(0, 12 - distMi * 6) - (already ? 100 : 0);
-      out.push({ name, kind, typeLabel: info.label, leadType: info.lead, lat, lon, distMi, addr, city: t["addr:city"] || "", already, score, signals: signals.slice(0, 4), website: t.website || t["contact:website"] || "" });
+      out.push({ name, kind, typeLabel: info.label, leadType: info.lead, lat, lon, distMi, addr, city: t["addr:city"] || "", already, score, signals: signals.slice(0, 4), website: t.website || t["contact:website"] || "", email: t.email || t["contact:email"] || "", phone: t.phone || t["contact:phone"] || "" });
     });
     return out.filter((s) => !s.already).sort((a, b) => b.score - a.score).slice(0, 30);
   },
@@ -1155,7 +1223,7 @@ const App = {
     DB.insert("leads", {
       id: "lead_" + Date.now().toString(36) + idx, name: store.name, type: store.leadType,
       city, state, status: "to_visit", priority: "high", address: store.addr || "",
-      lat: store.lat, lng: store.lon,
+      lat: store.lat, lng: store.lon, email: store.email || "", phone: store.phone || "", website: store.website || "",
       note: `${store.typeLabel}${ctx && ctx.name ? " · ~" + store.distMi.toFixed(1) + " mi from " + ctx.name : ""}.${store.addr ? " " + store.addr + "." : ""}${sig}`,
       source: "scout", distributor_id: cov ? cov.id : null, created_at: new Date().toISOString().slice(0, 10),
     });
@@ -1604,6 +1672,16 @@ const App = {
         <p class="muted">Accounts: ${counts.stores} · Orders: ${counts.orders} · Distributors: ${counts.distributors}</p>
       </div>
       <div class="panel">
+        <div class="panel__head"><h3>Outreach email</h3></div>
+        <p class="muted" style="margin-top:0">The template used by the ✉️ Send outreach email button on a lead or account. Use <code>{{store}}</code> and <code>{{contact}}</code> as placeholders — they're filled in per-recipient. Opens in your own mail app; nothing sends automatically.</p>
+        <div class="field"><label>Subject</label><input id="set-outreach-subject" value="${esc((DB.settings().outreach_template || this.DEFAULT_OUTREACH).subject)}"></div>
+        <div class="field"><label>Body</label><textarea id="set-outreach-body" rows="8">${esc((DB.settings().outreach_template || this.DEFAULT_OUTREACH).body)}</textarea></div>
+        <div class="btn-row">
+          <button class="btn btn--primary" onclick="App.saveOutreachTemplate()">Save template</button>
+          <button class="btn btn--ghost" onclick="App.resetOutreachTemplate()">Reset to default</button>
+        </div>
+      </div>
+      <div class="panel">
         <div class="panel__head"><h3>Exports</h3></div>
         <p class="muted" style="margin-top:0">Share these with distributors, your accountant, or your website.</p>
         <div class="btn-row">
@@ -1653,6 +1731,17 @@ const App = {
   resetDemo() {
     if (!confirm("Reset to demo data? Removes your changes.")) return;
     DB.reset(); this.toast("Demo data reset"); this.go("dashboard");
+  },
+  saveOutreachTemplate() {
+    const subject = $("#set-outreach-subject").value.trim();
+    const body = $("#set-outreach-body").value;
+    DB.setSetting("outreach_template", { subject, body });
+    this.toast("Outreach template saved");
+  },
+  resetOutreachTemplate() {
+    DB.setSetting("outreach_template", null);
+    this.renderSettings();
+    this.toast("Reset to default template");
   },
 
   /* ---------------- MODAL + TOAST ---------------- */

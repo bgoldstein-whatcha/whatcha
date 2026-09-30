@@ -1,0 +1,11 @@
+{
+  "name": "Whatcha HQ — Internal Dashboard",
+  "short_name": "Whatcha HQ",
+  "start_url": "/dashboard/",
+  "display": "standalone",
+  "background_color": "#e2f6fe",
+  "theme_color": "#0526c5",
+  "icons": [
+    { "src": "assets/img/favicon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

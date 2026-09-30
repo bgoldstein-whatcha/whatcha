@@ -119,7 +119,7 @@ function seedData() {
     { id: uid("lead"), name: "Seaside beach club", type: "Venue", city: "Hyannis", state: "MA", status: "contacted", priority: "medium", note: "GM asked for a sample case before committing.", source: "manual", created_at: "2026-08-03" },
   ];
 
-  return { products, pricing, distributors, stores, orders, exports, leads, dismissed_recs: [], meta: { seeded_at: new Date().toISOString() } };
+  return { products, pricing, distributors, stores, orders, exports, leads, dismissed_recs: [], settings: {}, meta: { seeded_at: new Date().toISOString() } };
 }
 
 /* ============================================================
@@ -280,6 +280,8 @@ const SupabaseBackend = {
     }
     const kv = await this.sb.from("app_kv").select("value").eq("key", "dismissed_recs").maybeSingle();
     state.dismissed_recs = (kv.data && kv.data.value) || [];
+    const kv2 = await this.sb.from("app_kv").select("value").eq("key", "settings").maybeSingle();
+    state.settings = (kv2.data && kv2.data.value) || {};
     this._state = state;
     this.ready = true;
     if (!state.products.length) await this._seedInitial();
@@ -303,6 +305,7 @@ const SupabaseBackend = {
     // Only app-level kv (dismissed recs) needs a blanket save; rows persist per-write.
     if (!this._state) return;
     this.sb.from("app_kv").upsert({ key: "dismissed_recs", value: this._state.dismissed_recs || [] }).then(({ error }) => { if (error) this._warn(error); });
+    this.sb.from("app_kv").upsert({ key: "settings", value: this._state.settings || {} }).then(({ error }) => { if (error) this._warn(error); });
   },
 
   all(coll) { return JSON.parse(JSON.stringify(this._state[coll] || [])); },
@@ -475,17 +478,17 @@ const DB = {
     return { orders: ords, revenue, cases, count: ords.length, last: ords.length ? ords[ords.length - 1].date : null };
   },
 
-  /* ---------- ACCOUNT NOTES (timestamped log) ---------- */
-  addNote(store_id, text) {
-    const s = this.store(store_id); if (!s) return null;
-    const log = (s.notes_log || []).slice();
+  /* ---------- NOTES (timestamped log) — works for stores or leads ---------- */
+  addNote(id, text, coll = "stores") {
+    const rec = coll === "leads" ? this.lead(id) : this.store(id); if (!rec) return null;
+    const log = (rec.notes_log || []).slice();
     log.unshift({ id: uid("note"), at: new Date().toISOString(), text });
-    return this.update("stores", store_id, { notes_log: log });
+    return this.update(coll, id, { notes_log: log });
   },
-  deleteNote(store_id, note_id) {
-    const s = this.store(store_id); if (!s) return null;
-    const log = (s.notes_log || []).filter((n) => n.id !== note_id);
-    return this.update("stores", store_id, { notes_log: log });
+  deleteNote(id, note_id, coll = "stores") {
+    const rec = coll === "leads" ? this.lead(id) : this.store(id); if (!rec) return null;
+    const log = (rec.notes_log || []).filter((n) => n.id !== note_id);
+    return this.update(coll, id, { notes_log: log });
   },
 
   /* ---------- LEADS ---------- */
@@ -587,6 +590,15 @@ const DB = {
     this.backend._save();
   },
   clearDismissed() { const s = this.backend._load(); s.dismissed_recs = []; this.backend._save(); },
+
+  /* ---------- APP SETTINGS (small kv blob — e.g. outreach email template) ---------- */
+  settings() { return this.backend._load().settings || {}; },
+  setSetting(key, value) {
+    const s = this.backend._load();
+    s.settings = s.settings || {};
+    s.settings[key] = value;
+    this.backend._save();
+  },
   // Turn a recommendation into a saved lead in the worklist.
   promoteRecToLead(poi_id) {
     const poi = POIS.find((p) => p.id === poi_id); if (!poi) return null;
