@@ -313,11 +313,14 @@ function clearMarkers() {
 }
 
 function addMarker(store, coords, index) {
+  // same teardrop pin as the homepage locator map (.locator__pin in
+  // assets/style.css), so store pins read as the same brand mark everywhere
   var icon = L.divIcon({
-    className: 'store-marker',
-    html: '<div style="width:22px;height:22px;border-radius:50%;background:var(--coral);border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);"></div>',
-    iconSize: [22, 22],
-    iconAnchor: [11, 11]
+    className: '',
+    html: '<div class="locator__pin"></div>',
+    iconSize: [34, 34],
+    iconAnchor: [17, 34],
+    popupAnchor: [0, -34]
   });
   var marker = L.marker([coords.lat, coords.lng], { icon: icon }).addTo(map);
   var popupHtml = '<div class="store-popup"><h3>' + store.name + '</h3><p>' + store.address + '</p>' +
