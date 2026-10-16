@@ -228,7 +228,16 @@
       attribution: "&copy; OpenStreetMap contributors",
       maxZoom: 18
     }).addTo(map);
-    L.marker(venue).addTo(map).bindPopup("<strong>Hartford HealthCare Amphitheater</strong><br>Bridgeport, CT — launch venue").openPopup();
+    // branded teardrop pin instead of Leaflet's default blue marker — the
+    // tile tint (see .locator__map in style.css) handles the base map
+    var brandPin = L.divIcon({
+      className: "",
+      html: '<div class="locator__pin"></div>',
+      iconSize: [34, 34],
+      iconAnchor: [17, 34],
+      popupAnchor: [0, -34]
+    });
+    L.marker(venue, { icon: brandPin }).addTo(map).bindPopup("<strong>Hartford HealthCare Amphitheater</strong><br>Bridgeport, CT — launch venue").openPopup();
   }
 
   function initMarquee() {

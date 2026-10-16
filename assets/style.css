@@ -769,6 +769,44 @@ section { position: relative; }
   overflow: hidden;
   background: var(--cream);
 }
+/* the map tiles are the one photorealistic/cartographic element on an
+   otherwise fully flat-illustrated site — nudge them toward the brand's
+   teal without crushing legibility. Two things that looked "more branded"
+   both made the map harder to actually read, so neither is used:
+   (1) a heavy filter stack (sepia + hue-rotate + saturate 2.4) flattened
+   the contrast between roads/land/water into one narrow tone band;
+   (2) a translucent mix-blend-mode:color overlay never actually reached
+   the tile layer — Leaflet's panes are each individually z-indexed and
+   positioned, so each forms its own stacking context, and blend-mode
+   doesn't cross that boundary. A light hue-rotate directly on the
+   original (non-sepia'd) tiles keeps each tile's own contrast intact
+   while still shifting the palette toward teal. */
+.locator__map .leaflet-tile-pane {
+  filter: hue-rotate(18deg) saturate(1.2) brightness(1.02);
+}
+.locator__pin {
+  width: 34px;
+  height: 34px;
+  background: var(--coral);
+  border: 3px solid var(--navy);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  /* no offset box-shadow here — on a rotated teardrop it duplicates the
+     whole silhouette instead of reading as a shadow, looking like a
+     second pin peeking out from behind */
+  filter: drop-shadow(0 2px 2px rgba(5,38,197,0.45));
+  position: relative;
+}
+.locator__pin::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  width: 14px;
+  height: 14px;
+  background: var(--yellow);
+  border-radius: 50%;
+}
 .locator__copy .btn { margin-top: 0.5rem; }
 @media (max-width: 860px) {
   .locator__inner { grid-template-columns: 1fr; }
