@@ -104,6 +104,9 @@ h1 {
   line-height: 1;
   margin: 0;
   color: var(--navy);
+  /* negative tracking at display size — FT Buck reads loose/airy above ~3rem
+     without it; body/heading sizes below don't need this. */
+  letter-spacing: -0.015em;
 }
 h2, h3, h4 {
   font-family: var(--font-ui); letter-spacing: 0.07em;
@@ -112,7 +115,12 @@ h2, h3, h4 {
   margin: 0;
   color: var(--navy);
 }
-h2 { font-size: var(--fs-h2); }
+h2 {
+  font-size: var(--fs-h2);
+  /* tracking eases down as h2 grows across its own clamp() range instead of
+     staying flat at 0.07em regardless of rendered size */
+  letter-spacing: clamp(-0.01em, -0.015vw + 0.02em, 0.03em);
+}
 h3 { font-size: var(--fs-h3); }
 
 p { margin: 0; }
@@ -140,7 +148,10 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-family: var(--font-ui); letter-spacing: 0.07em;
+  font-family: var(--font-ui);
+  /* tracking eases down slightly as the button's own clamp() grows, instead
+     of one flat 0.07em at every size */
+  letter-spacing: clamp(0.02em, -0.01vw + 0.05em, 0.06em);
   font-weight: 700;
   font-size: clamp(1rem, 0.3vw + 0.95rem, 1.15rem);
   padding: 0.9em 2.1em;
@@ -157,6 +168,13 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
 }
 .btn:active { transform: translate(0, 0); box-shadow: 2px 2px 0 rgba(5,38,197,0.9); }
 .btn:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: saturate(0.6);
+  transform: none !important;
+  box-shadow: var(--shadow-hard-sm) !important;
+}
 
 .btn--outline {
   background: transparent;
@@ -237,12 +255,29 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
 .nav-toggle[aria-expanded="true"] .icon-close { display: block; }
 .nav-toggle[aria-expanded="true"] { color: var(--cream); }
 
+/* dims the page behind the mobile nav drawer — same materials language as
+   the age-gate backdrop. Inert and display:none above the drawer's own
+   780px breakpoint, where it's never shown. */
+.nav-scrim {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: rgba(11, 18, 40, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
 @media (max-width: 780px) {
+  .nav-scrim { display: block; }
+  .nav-scrim[data-open="true"] { opacity: 1; pointer-events: auto; }
   .nav-links {
     position: fixed;
     inset: 0 0 0 auto;
     height: 100vh;
     width: min(78vw, 320px);
+    z-index: 41;
     background: var(--navy);
     flex-direction: column;
     align-items: flex-start;
@@ -292,6 +327,12 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .marquee__track { animation: none; }
   .sparkle { animation: none; }
+  .age-gate { transition: opacity 0.15s linear !important; }
+  .age-gate__card { transition: none !important; transform: none !important; }
+  .nav-scrim { transition: opacity 0.15s linear !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .age-gate { background: rgba(11, 18, 40, 0.95); backdrop-filter: none; }
 }
 
 /* ---------- age gate ---------- */
@@ -305,7 +346,13 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   background: rgba(11, 18, 40, 0.65);
   backdrop-filter: blur(3px);
   padding: 1.5rem;
+  /* materializes in rather than snapping on — see .is-open below and
+     initAgeGate()'s double-rAF toggle in main.js */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
 }
+.age-gate.is-open { opacity: 1; pointer-events: auto; }
 .age-gate[hidden] { display: none; }
 .age-gate__card {
   background: var(--red);
@@ -316,7 +363,10 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   width: 100%;
   padding: clamp(2rem, 5vw, 2.75rem) clamp(1.75rem, 4vw, 2.5rem);
   text-align: center;
+  transform: scale(0.92) translateY(8px);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.age-gate.is-open .age-gate__card { transform: scale(1) translateY(0); }
 .age-gate__card .logo-badge { width: min(340px, 92%); margin: 0 auto 1.25rem; }
 .age-gate__card h2 {
   color: var(--cream);
@@ -419,7 +469,17 @@ section { position: relative; }
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
 }
-.form-status { font-weight: 700; margin-top: 1rem; }
+.form-status {
+  font-weight: 700;
+  margin-top: 1rem;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.form-status.is-shown { opacity: 1; transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .form-status { transition: opacity 0.15s linear; transform: none; }
+}
 
 /* ---------- utility ---------- */
 .text-center { text-align: center; }
@@ -674,6 +734,22 @@ section { position: relative; }
   .story__art { margin-top: 1rem; }
 }
 
+/* ---------- brand ambassador teaser ---------- */
+.ambassador { background: var(--yellow); }
+.ambassador__inner {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(2rem, 5vw, 3.5rem);
+  align-items: center;
+}
+.ambassador__copy p { color: var(--ink); }
+.ambassador__copy .btn { margin-top: 0.5rem; }
+.ambassador__art img { width: min(100%, 340px); margin-inline: auto; }
+@media (max-width: 860px) {
+  .ambassador__inner { grid-template-columns: 1fr; text-align: center; }
+  .ambassador__art { order: -1; }
+}
+
 /* ---------- locator / map ---------- */
 .locator { background: var(--coral); }
 .locator__inner {
@@ -713,7 +789,14 @@ section { position: relative; }
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-hard-sm);
   padding: 0.9rem 1.25rem;
+  /* smooth expand/collapse instead of native <details>'s instant snap —
+     grid-template-rows animates even though the answer's height was
+     never explicitly measured */
+  display: grid;
+  grid-template-rows: auto 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.faq__item[open] { grid-template-rows: auto 1fr; }
 .faq__item summary {
   font-family: var(--font-ui);
   font-weight: 700;
@@ -736,19 +819,26 @@ section { position: relative; }
   flex-shrink: 0;
   transition: transform 0.2s ease;
 }
-.faq__item[open] summary::after { content: "\2212"; }
-.faq__item p {
+/* rotate the same "+" glyph into an "x" instead of swapping its content —
+   a content swap can't be animated, a transform can */
+.faq__item[open] summary::after { transform: rotate(45deg); }
+.faq__answer { overflow: hidden; min-height: 0; }
+.faq__answer p {
   margin-top: 0.75rem;
   color: var(--ink);
   line-height: 1.6;
 }
-.faq__item p a {
+.faq__answer p a {
   color: var(--coral);
   font-weight: 700;
   text-decoration: underline;
 }
 @media (hover: hover) and (pointer: fine) {
-  .faq__item p a:hover { color: var(--navy); }
+  .faq__answer p a:hover { color: var(--navy); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq__item { transition: none; }
+  .faq__item summary::after { transition: none; }
 }
 
 /* ---------- signup ---------- */

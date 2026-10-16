@@ -17,11 +17,37 @@
       return;
     }
     document.body.style.overflow = "hidden";
+
+    // CSS default state is "closed" (opacity 0, card scaled down); add
+    // is-open a frame after first paint so the browser actually renders
+    // the closed state first and the materialize transition has something
+    // to animate from, instead of jumping straight to open.
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        gate.classList.add("is-open");
+      });
+    });
+
+    function closeGate() {
+      gate.classList.remove("is-open");
+      document.body.style.overflow = "";
+      var done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        gate.hidden = true;
+        gate.removeEventListener("transitionend", finish);
+      }
+      gate.addEventListener("transitionend", finish);
+      // fallback in case the transition never fires (e.g. reduced motion
+      // dropped it to an instant change, or the event is otherwise missed)
+      setTimeout(finish, 400);
+    }
+
     gate.querySelectorAll("[data-age-yes]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         sessionStorage.setItem(AGE_KEY, "true");
-        gate.hidden = true;
-        document.body.style.overflow = "";
+        closeGate();
         if (typeof gtag === "function") gtag("event", "age_gate_confirm", { result: "yes" });
       });
     });
@@ -36,16 +62,47 @@
   function initNavToggle() {
     var toggle = document.querySelector("[data-nav-toggle]");
     var links = document.querySelector("[data-nav-links]");
+    var scrim = document.querySelector("[data-nav-scrim]");
     if (!toggle || !links) return;
+
+    function setOpen(open) {
+      links.setAttribute("data-open", String(open));
+      toggle.setAttribute("aria-expanded", String(open));
+      if (scrim) scrim.setAttribute("data-open", String(open));
+    }
+
     toggle.addEventListener("click", function () {
-      var open = links.getAttribute("data-open") === "true";
-      links.setAttribute("data-open", String(!open));
-      toggle.setAttribute("aria-expanded", String(!open));
+      setOpen(links.getAttribute("data-open") !== "true");
     });
     links.querySelectorAll("a").forEach(function (a) {
-      a.addEventListener("click", function () {
-        links.setAttribute("data-open", "false");
-        toggle.setAttribute("aria-expanded", "false");
+      a.addEventListener("click", function () { setOpen(false); });
+    });
+    // dims the page, so tapping it should feel the same as tapping a nav link
+    if (scrim) scrim.addEventListener("click", function () { setOpen(false); });
+  }
+
+  function initFaqAccordion() {
+    document.querySelectorAll(".faq__item").forEach(function (item) {
+      var summary = item.querySelector("summary");
+      if (!summary) return;
+      summary.addEventListener("click", function (e) {
+        // only the close direction needs help — opening already animates
+        // smoothly via the grid-template-rows transition in style.css
+        if (!item.open || item.classList.contains("is-closing")) return;
+        e.preventDefault();
+        item.classList.add("is-closing");
+        item.style.gridTemplateRows = "auto 0fr";
+        var done = false;
+        function finish() {
+          if (done) return;
+          done = true;
+          item.open = false;
+          item.classList.remove("is-closing");
+          item.style.gridTemplateRows = "";
+          item.removeEventListener("transitionend", finish);
+        }
+        item.addEventListener("transitionend", finish);
+        setTimeout(finish, 400);
       });
     });
   }
@@ -59,7 +116,17 @@
         var status = form.parentElement.querySelector("[data-form-status]");
         var submitBtn = form.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.disabled = true;
-        if (status) status.textContent = "Sending…";
+        // fades in on the same frame the text is set, rather than popping
+        // into the layout — see .form-status.is-shown in style.css
+        function setStatus(text) {
+          if (!status) return;
+          status.textContent = text;
+          status.classList.remove("is-shown");
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () { status.classList.add("is-shown"); });
+          });
+        }
+        setStatus("Sending…");
 
         // Google Forms submissions (data-form-google) POST straight to that
         // form's own /formResponse endpoint with entry.NNNNNNN field names.
@@ -88,7 +155,7 @@
           body: body
         }).then(function (res) {
           if (isGoogleForm || res.ok) {
-            if (status) status.textContent = "Thanks — we've got it. We'll be in touch soon!";
+            setStatus("Thanks — we've got it. We'll be in touch soon!");
             if (typeof gtag === "function") {
               gtag("event", "form_submit_success", {
                 form_id: form.id || null,
@@ -97,10 +164,10 @@
             }
             form.reset();
           } else {
-            if (status) status.textContent = "Something went wrong — please email hello@whatchadrinking.com directly.";
+            setStatus("Something went wrong — please email hello@whatchadrinking.com directly.");
           }
         }).catch(function () {
-          if (status) status.textContent = "Something went wrong — please email hello@whatchadrinking.com directly.";
+          setStatus("Something went wrong — please email hello@whatchadrinking.com directly.");
         }).finally(function () {
           if (submitBtn) submitBtn.disabled = false;
         });
@@ -216,6 +283,7 @@
   document.addEventListener("DOMContentLoaded", function () {
     initAgeGate();
     initNavToggle();
+    initFaqAccordion();
     initForms();
     initPouchParallax();
     initLocatorMap();

@@ -144,7 +144,15 @@
   }
   .email-gate__form input[type="email"]:focus,
   .email-gate__form input[type="text"]:focus { outline: 3px solid var(--yellow); outline-offset: 1px; }
-  .email-gate__status { color: var(--cream); font-size: 0.85rem; min-height: 1.2em; }
+  .email-gate__status {
+    color: var(--cream); font-size: 0.85rem; min-height: 1.2em;
+    opacity: 0; transform: translateY(4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .email-gate__status.is-shown { opacity: 1; transform: translateY(0); }
+  @media (prefers-reduced-motion: reduce) {
+    .email-gate__status { transition: opacity 0.15s linear; transform: none; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -199,6 +207,7 @@
     <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
       <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
     </button>
+    <div class="nav-scrim" data-nav-scrim aria-hidden="true"></div>
     <ul class="nav-links" data-nav-links>
       <li><a href="about.html">About</a></li>
       <li><a href="index.html#flavors">Flavors</a></li>
@@ -337,6 +346,12 @@ function initEmailGate() {
     if (localStorage.getItem(EMAIL_GATE_KEY)) return;
     gate.hidden = false;
     document.body.style.overflow = 'hidden';
+    // .age-gate defaults to opacity:0 (see assets/style.css) and only
+    // materializes in once .is-open is added — mirrors initAgeGate() in
+    // assets/main.js so this second gate instance animates the same way.
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { gate.classList.add('is-open'); });
+    });
   }
 
   // the age gate (assets/main.js) has to clear first — if it's already been
@@ -358,7 +373,14 @@ function initEmailGate() {
     var submitBtn = form.querySelector('button[type="submit"]');
     var email = form.querySelector('input[type="email"]').value;
     submitBtn.disabled = true;
-    status.textContent = 'Unlocking…';
+    function setStatus(text) {
+      status.textContent = text;
+      status.classList.remove('is-shown');
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () { status.classList.add('is-shown'); });
+      });
+    }
+    setStatus('Unlocking…');
 
     // Google Forms submissions are cross-origin and opaque (see main.js'
     // initForms for the full explanation) — a resolved fetch only proves
@@ -383,10 +405,19 @@ function initEmailGate() {
       if (!isGoogleForm && !res.ok) throw new Error('bad response');
       localStorage.setItem(EMAIL_GATE_KEY, email);
       if (typeof gtag === 'function') gtag('event', 'brand_assets_email_unlock');
-      gate.hidden = true;
+      gate.classList.remove('is-open');
       document.body.style.overflow = '';
+      var done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        gate.hidden = true;
+        gate.removeEventListener('transitionend', finish);
+      }
+      gate.addEventListener('transitionend', finish);
+      setTimeout(finish, 400);
     }).catch(function () {
-      status.textContent = "Something went wrong — please email hello@whatchadrinking.com directly.";
+      setStatus("Something went wrong — please email hello@whatchadrinking.com directly.");
       submitBtn.disabled = false;
     });
   });
