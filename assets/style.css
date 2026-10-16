@@ -115,12 +115,7 @@ h2, h3, h4 {
   margin: 0;
   color: var(--navy);
 }
-h2 {
-  font-size: var(--fs-h2);
-  /* tracking eases down as h2 grows across its own clamp() range instead of
-     staying flat at 0.07em regardless of rendered size */
-  letter-spacing: clamp(-0.01em, -0.015vw + 0.02em, 0.03em);
-}
+h2 { font-size: var(--fs-h2); }
 h3 { font-size: var(--fs-h3); }
 
 p { margin: 0; }
@@ -148,10 +143,7 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  font-family: var(--font-ui);
-  /* tracking eases down slightly as the button's own clamp() grows, instead
-     of one flat 0.07em at every size */
-  letter-spacing: clamp(0.02em, -0.01vw + 0.05em, 0.06em);
+  font-family: var(--font-ui); letter-spacing: 0.07em;
   font-weight: 700;
   font-size: clamp(1rem, 0.3vw + 0.95rem, 1.15rem);
   padding: 0.9em 2.1em;
