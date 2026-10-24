@@ -146,3 +146,5 @@ table.data.wa-tbl td.num { white-space: nowrap; }
 @media (max-width: 520px) { .wa-lb__form { grid-template-columns: 1fr; } }
 .wa-lb__form { align-content: start; align-items: end; }
 .wa-lb__form label .muted { font-family: var(--font-body); letter-spacing: 0; }
+/* soften the OpenStreetMap background so visitor dots stand out */
+.wa-map .leaflet-tile-pane, .wa-livemap .leaflet-tile-pane { filter: saturate(.35) brightness(1.04); }

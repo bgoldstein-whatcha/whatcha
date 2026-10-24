@@ -126,6 +126,7 @@
       const { data: ids, error: idErr } = await this.sb().from("wa_identities").select("*");
       if (idErr) throw idErr;
       rows.forEach((r) => { r.channel = channel(r); r.source = sourceLabel(r); r._t = new Date(r.ts).getTime(); });
+      markRefreshes(rows);
       this.rows = rows;
       this.ids = {};
       (ids || []).forEach((i) => { this.ids[i.vid] = i; });
@@ -141,7 +142,24 @@
   };
 
   /* ---------------- aggregation ---------------- */
+  // A browser refresh of the same page within 30s is the same view, not a new one.
+  function markRefreshes(rows) {
+    const lastBySid = new Map();
+    for (const r of rows) {
+      if (r.kind !== "pageview") continue;
+      const prev = lastBySid.get(r.sid);
+      if (prev && prev.path === r.path && r.props && r.props.nav_type === "reload" && r._t - prev._t < 30000) {
+        r._refresh = true;
+        prev.engaged_ms = (prev.engaged_ms || 0) + (r.engaged_ms || 0);
+        prev.scroll_pct = Math.max(prev.scroll_pct || 0, r.scroll_pct || 0);
+        if (r.last_seen > prev.last_seen) prev.last_seen = r.last_seen;
+        continue; // later refreshes keep folding into the same original view
+      }
+      lastBySid.set(r.sid, r);
+    }
+  }
   WA.passes = function (r) {
+    if (r._refresh) return false;
     if (!this.includeBots && r.is_bot) return false;
     for (const k in this.filters) {
       const v = this.filters[k];
@@ -788,7 +806,7 @@
   }
   function baseMap(el, opts = {}) {
     const map = L.map(el, { scrollWheelZoom: false, worldCopyJump: true, zoomControl: true, attributionControl: true, ...opts });
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", { attribution: "&copy; OpenStreetMap &copy; CARTO", maxZoom: 18, subdomains: "abcd" }).addTo(map);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 }).addTo(map);
     return map;
   }
   function cityPoints(sessions) {
@@ -849,7 +867,7 @@
     for (const r of rows) if (!bySid.has(r.sid)) bySid.set(r.sid, r);
     const live = [...bySid.values()].filter((r) => Date.now() - new Date(r.last_seen).getTime() < 75000);
     // session start time + pages in session (from the loaded window if we have it)
-    const sessInfo = (sid) => { const pv = this.rows.filter((x) => x.sid === sid && x.kind === "pageview"); return { pages: pv.length, start: pv.length ? Math.min(...pv.map((x) => x._t)) : null }; };
+    const sessInfo = (sid) => { const pv = this.rows.filter((x) => x.sid === sid && x.kind === "pageview" && !x._refresh); return { pages: pv.length, start: pv.length ? Math.min(...pv.map((x) => x._t)) : null }; };
     const was = this._liveCount;
     this._liveCount = live.length;
     el.innerHTML = `
