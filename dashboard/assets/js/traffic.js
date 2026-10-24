@@ -101,7 +101,7 @@
   WA.prevSince = function () { const s = this.since(); return new Date(s.getTime() - (Date.now() - s.getTime())); };
 
   /* ---------------- data ---------------- */
-  WA.sb = function () { return App.sb; };
+  WA.sb = function () { return window.WA_DEMO_CLIENT || App.sb; };
 
   WA.fetchAll = async function (fromIso) {
     const sb = this.sb();
@@ -327,6 +327,141 @@
     return `<div class="wa-donut"><svg viewBox="0 0 160 160" width="150" height="150">${segs}</svg><div>${legend}</div></div>`;
   }
 
+
+  /* ---------------- extra panels ---------------- */
+  const HIGH_INTENT_PATHS = /^\/(store-locator|sell-whatcha|contact|join-the-team|brand-ambassador)/;
+  function funnel(A) {
+    const steps = [
+      { label: "Landed on the site", test: () => true },
+      { label: "Got past the age gate", test: (s) => !s.evs.some((e) => e.name === "age_gate_confirm" && e.props && e.props.result === "no") && (s.evs.some((e) => e.name === "age_gate_confirm") || s.pvs.length > 1 || s.engaged >= 5000) },
+      { label: "Engaged (2+ pages, 30s+, or scrolled half)", test: (s) => s.pvs.length > 1 || s.engaged >= 30000 || s.pvs.some((p) => (p.scroll_pct || 0) >= 50) },
+      { label: "Showed buying / selling intent", hint: "store locator, sell-Whatcha, contact, IG/TikTok click", test: (s) => s.pvs.some((p) => HIGH_INTENT_PATHS.test(p.path || "")) || s.evs.some((e) => e.name === "store_locator_search" || (e.name === "outbound_click" && /instagram|tiktok/.test((e.props && e.props.domain) || ""))) },
+      { label: "Submitted a form", test: (s) => s.converted },
+    ];
+    let pool = A.sess;
+    const rows = steps.map((st) => { pool = pool.filter(st.test); return { ...st, n: pool.length }; });
+    const top = rows[0].n || 1;
+    const under = A.sess.filter((s) => s.evs.some((e) => e.name === "age_gate_confirm" && e.props && e.props.result === "no")).length;
+    return `<div class="wa-funnel">${rows.map((r, i) => {
+      const prev = i ? rows[i - 1].n : r.n;
+      return `<div class="wa-fstep"><div class="wa-fstep__lab"><b>${H(r.label)}</b>${r.hint ? `<span class="muted"> · ${H(r.hint)}</span>` : ""}</div>
+        <div class="wa-fstep__bar"><div style="width:${Math.max(1.5, (r.n / top) * 100)}%;background:${["#0526c5", "#27baad", "#75d0f7", "#f37847", "#1f9d6b"][i]}"></div></div>
+        <div class="wa-fstep__n"><b>${n0(r.n)}</b> <span class="muted">${pct(r.n, top)}%</span>${i ? `<span class="wa-fdrop">${prev ? "−" + (100 - pct(r.n, prev)) + "% from previous step" : ""}</span>` : ""}</div></div>`;
+    }).join("")}</div>${under ? `<div class="muted" style="font-size:12px;margin-top:10px">🔞 ${n0(under)} session${under > 1 ? "s" : ""} answered “Not yet” at the age gate (${pct(under, A.sessions)}%).</div>` : ""}`;
+  }
+
+  function storeSearches(A) {
+    const m = new Map();
+    A.evs.filter((e) => e.name === "store_locator_search").forEach((e) => {
+      const q = ((e.props && e.props.query) || "(blank)").toUpperCase();
+      let g = m.get(q); if (!g) { g = { key: q, count: 0, visitors: new Set(), from: new Map() }; m.set(q, g); }
+      g.count++; g.visitors.add(e.vid);
+      const pv = A.sess.find((s) => s.sid === e.sid); const c = pv && pv.first.city ? pv.first.city + (pv.first.region ? ", " + pv.first.region : "") : "";
+      if (c) g.from.set(c, (g.from.get(c) || 0) + 1);
+    });
+    const rows = [...m.values()].map((g) => ({ ...g, visitors: g.visitors.size, fromTop: [...g.from.entries()].sort((a, b) => b[1] - a[1])[0] })).sort((a, b) => b.count - a.count);
+    if (!rows.length) return `<div class="t-empty">No searches yet. Every ZIP typed into the store locator lands here.</div>`;
+    return rankTable(rows, { id: "zips", label: "Searched ZIP / place", cols: [{ k: "count", label: "Searches" }, { k: "visitors", label: "People" }], keyFmt: (r) => `<b>${H(r.key)}</b>${r.fromTop ? `<span class="muted"> · from ${H(r.fromTop[0])}</span>` : ""}` });
+  }
+
+  function rageClicks(A) {
+    const m = new Map();
+    A.evs.filter((e) => e.name === "rage_click").forEach((e) => { const k = (((e.props && e.props.text) || "(unlabeled " + ((e.props && e.props.tag) || "element") + ")") + " · " + e.path); m.set(k, (m.get(k) || 0) + 1); });
+    const rows = [...m.entries()].map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count);
+    if (!rows.length) return `<div class="t-empty">No rage clicks 🎉 — nothing on the site is frustrating people.</div>`;
+    return rankTable(rows, { id: "rage", label: "Element · page", cols: [{ k: "count", label: "Rage clicks" }] });
+  }
+
+  const p75 = (arr) => { const a = arr.filter((x) => x != null && isFinite(x)).sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * 0.75))] : null; };
+  const GRADE = { lcp: [2500, 4000], inp: [200, 500], cls: [0.1, 0.25], ttfb: [800, 1800] };
+  function grade(metric, v) {
+    if (v == null) return `<span class="muted">—</span>`;
+    const [g, p] = GRADE[metric];
+    const cls = v <= g ? "good" : v <= p ? "ok" : "poor";
+    const txt = metric === "cls" ? v.toFixed(2) : v >= 1000 ? (v / 1000).toFixed(1) + "s" : Math.round(v) + "ms";
+    return `<span class="wa-vital wa-vital--${cls}">${txt}</span>`;
+  }
+  function speed(A) {
+    const v = A.evs.filter((e) => e.name === "web_vitals" && e.props);
+    if (!v.length) return `<div class="t-empty">Collecting… page-speed numbers arrive as real visitors leave each page.</div>`;
+    const by = (keyFn) => {
+      const m = new Map();
+      v.forEach((e) => { const k = keyFn(e) || "(none)"; if (!m.has(k)) m.set(k, []); m.get(k).push(e.props); });
+      return [...m.entries()].map(([key, ps]) => ({ key, n: ps.length, lcp: p75(ps.map((p) => p.lcp)), inp: p75(ps.map((p) => p.inp)), cls: p75(ps.map((p) => p.cls)), ttfb: p75(ps.map((p) => p.ttfb)) })).sort((a, b) => b.n - a.n);
+    };
+    const all = by(() => "All visits")[0];
+    const dev = by((e) => e.device);
+    const pages = by((e) => e.path).slice(0, 12);
+    const row = (r) => `<tr><td>${H(r.key)}</td><td class="num">${grade("lcp", r.lcp)}</td><td class="num">${grade("inp", r.inp)}</td><td class="num">${grade("cls", r.cls)}</td><td class="num">${grade("ttfb", r.ttfb)}</td><td class="num mono muted">${r.n}</td></tr>`;
+    return `<div class="wa-vitals-sum">
+        <div><span>Loading (LCP)</span>${grade("lcp", all.lcp)}<small>main content visible · good &lt; 2.5s</small></div>
+        <div><span>Responsiveness (INP)</span>${grade("inp", all.inp)}<small>tap → reaction · good &lt; 200ms</small></div>
+        <div><span>Stability (CLS)</span>${grade("cls", all.cls)}<small>layout jumping · good &lt; 0.1</small></div>
+        <div><span>Server (TTFB)</span>${grade("ttfb", all.ttfb)}<small>first byte · good &lt; 0.8s</small></div>
+      </div>
+      <div class="table-wrap"><table class="data wa-tbl"><thead><tr><th class="no-sort">Page / device</th><th class="no-sort num">LCP</th><th class="no-sort num">INP</th><th class="no-sort num">CLS</th><th class="no-sort num">TTFB</th><th class="no-sort num">Samples</th></tr></thead>
+      <tbody>${dev.map((r) => row({ ...r, key: devIco(r.key) + " " + r.key })).join("")}${pages.map(row).join("")}</tbody></table></div>`;
+  }
+
+  function errorsPanel(A) {
+    const m = new Map();
+    A.evs.filter((e) => e.name === "js_error").forEach((e) => {
+      const p = e.props || {}; const k = (p.message || "?") + " ␟ " + (p.source || "") + ":" + (p.line || "");
+      let g = m.get(k); if (!g) { g = { key: k, count: 0, pages: new Set(), browsers: new Set() }; m.set(k, g); }
+      g.count++; g.pages.add(e.path); g.browsers.add(e.browser);
+    });
+    const rows = [...m.values()].sort((a, b) => b.count - a.count);
+    if (!rows.length) return "";
+    return panel("Site errors", "JavaScript errors real visitors hit", `<div class="table-wrap"><table class="data wa-tbl"><thead><tr><th class="no-sort">Error</th><th class="no-sort">Where</th><th class="no-sort">Browsers</th><th class="no-sort num">Count</th></tr></thead><tbody>${rows.slice(0, 15).map((g) => { const [msg, src] = g.key.split(" ␟ "); return `<tr><td><b>${H(msg)}</b><div class="muted mono" style="font-size:11px">${H(src)}</div></td><td>${H([...g.pages].slice(0, 3).join(", "))}</td><td class="muted">${H([...g.browsers].filter(Boolean).slice(0, 3).join(", "))}</td><td class="num mono">${g.count}</td></tr>`; }).join("")}</tbody></table></div>`);
+  }
+
+  /* ---------------- campaign link + QR builder ---------------- */
+  const LB_PAGES = [["/", "Homepage"], ["/whatchalookinat", "Pouch QR page"], ["/store-locator/store-locator", "Store locator"], ["/sell-whatcha", "Wanna sell Whatcha?"], ["/about", "About"], ["/brand-ambassador", "Brand ambassador"], ["/join-the-team", "Join the team"]];
+  const LB_PRESETS = [["instagram", "social", "Instagram bio / story"], ["tiktok", "social", "TikTok bio"], ["qr", "qr", "Printed QR (pouch, sign, cart)"], ["newsletter", "email", "Email"], ["influencer", "influencer", "Influencer / ambassador"], ["linkedin", "social", "LinkedIn"], ["retailer", "referral", "Retail partner"]];
+  function linkBuilder() {
+    const st = WA._lb || (WA._lb = { page: "/", source: "instagram", medium: "social", campaign: "", content: "" });
+    return `<div class="wa-lb">
+      <div class="wa-lb__form">
+        <label>Page<select onchange="WA.lbSet('page',this.value)">${LB_PAGES.map(([v, l]) => `<option value="${v}" ${st.page === v ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+        <label>Where it's posted<select onchange="const [s,m]=this.value.split('|');WA.lbSet('source',s,true);WA.lbSet('medium',m)">${LB_PRESETS.map(([s, m, l]) => `<option value="${s}|${m}" ${st.source === s ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+        <label>Campaign<input value="${H(st.campaign)}" placeholder="e.g. fall_launch, uconn_tailgate" oninput="WA.lbSet('campaign',this.value,true)" onchange="WA.lbSet('campaign',this.value)"></label>
+        <label>Variant (optional)<input value="${H(st.content)}" placeholder="e.g. reel_1, cart_sign_b" oninput="WA.lbSet('content',this.value,true)" onchange="WA.lbSet('content',this.value)"></label>
+      </div>
+      <div class="wa-lb__out">
+        <div class="wa-lb__url" id="wa-lb-url"></div>
+        <div class="btn-row"><button class="btn btn--sm btn--primary" onclick="WA.lbCopy()">Copy link</button><button class="btn btn--sm btn--ghost" onclick="WA.lbQR(true)">⬇ QR code (PNG)</button></div>
+        <div id="wa-lb-qr" class="wa-lb__qr"></div>
+      </div></div>`;
+  }
+  WA.lbUrl = function () {
+    const st = this._lb, slug = (x) => (x || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    const q = new URLSearchParams({ utm_source: st.source, utm_medium: st.medium });
+    if (slug(st.campaign)) q.set("utm_campaign", slug(st.campaign));
+    if (slug(st.content)) q.set("utm_content", slug(st.content));
+    return "https://www.whatchadrinking.com" + st.page + "?" + q.toString();
+  };
+  WA.lbSet = function (k, v, quiet) { this._lb[k] = v; const el = $("#wa-lb-url"); if (el) el.textContent = this.lbUrl(); if (!quiet) this.lbQR(false); };
+  WA.lbCopy = function () { const u = this.lbUrl(); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(() => App.toast("Link copied"), () => App.toast(u)); };
+  let qrP = null;
+  function loadQR() {
+    if (window.qrcode) return Promise.resolve(window.qrcode);
+    return qrP || (qrP = new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"; s.onload = () => res(window.qrcode); s.onerror = rej; document.head.appendChild(s); }));
+  }
+  WA.lbQR = async function (download) {
+    const el = $("#wa-lb-url"); if (el) el.textContent = this.lbUrl();
+    const box = $("#wa-lb-qr"); if (!box) return;
+    try {
+      const qrcode = await loadQR();
+      const qr = qrcode(0, "M"); qr.addData(this.lbUrl()); qr.make();
+      const n = qr.getModuleCount(), cell = 10, pad = 4 * cell, size = n * cell + pad * 2;
+      const c = document.createElement("canvas"); c.width = c.height = size;
+      const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, size, size); g.fillStyle = "#0526c5";
+      for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (qr.isDark(r, k)) g.fillRect(pad + k * cell, pad + r * cell, cell, cell);
+      box.innerHTML = ""; c.style.width = "150px"; c.style.height = "150px"; box.appendChild(c);
+      if (download) { const a = document.createElement("a"); a.href = c.toDataURL("image/png"); a.download = "whatcha-qr-" + (this._lb.source + "-" + (this._lb.campaign || "link")).replace(/[^a-z0-9-]+/gi, "_") + ".png"; a.click(); }
+    } catch (e) { box.innerHTML = `<span class="muted">QR generator couldn't load.</span>`; }
+  };
+
   /* ---------------- shell ---------------- */
   WA.render = async function () {
     this.excludeThisDevice(true);
@@ -420,6 +555,7 @@
     // events
     const evMap = new Map();
     for (const e of A.evs) {
+      if (e.name === "web_vitals" || e.name === "js_error") continue;
       let g = evMap.get(e.name); if (!g) { g = { key: e.name, count: 0, visitors: new Set() }; evMap.set(e.name, g); }
       g.count++; g.visitors.add(e.vid);
     }
@@ -450,6 +586,8 @@
       </div>
 
       ${panel("Traffic", this.range === "today" || this.range === "24h" ? "by hour" : "by day", trendChart(buildBuckets.call(this, A)))}
+
+      ${panel("Conversion funnel", "sessions that made it to each step", funnel(A))}
 
       <div class="panel">
         <div class="panel__head"><h3>Where visitors are</h3><span class="spacer"></span><span class="muted" style="font-size:12px">${n0(new Set(A.sess.map((s) => s.first.city).filter(Boolean)).size)} cities · ${n0(new Set(A.sess.map((s) => s.first.region).filter(Boolean)).size)} regions · ${n0(new Set(A.sess.map((s) => s.first.country).filter(Boolean)).size)} countries</span></div>
@@ -512,6 +650,17 @@
 
       ${panel("When they visit", "", heatmap(A))}
 
+      <div class="grid-2">
+        ${panel("Store locator searches", "where people want Whatcha — sell there next", storeSearches(A))}
+        ${panel("Frustration", "rage clicks = 3 fast taps on something that didn't respond", rageClicks(A))}
+      </div>
+
+      ${panel("Page speed", "real visitors · 75th percentile · Google's Core Web Vitals", speed(A))}
+
+      ${errorsPanel(A)}
+
+      ${panel("Campaign link + QR builder", "tag every link you post so it shows up above", linkBuilder())}
+
       ${people.length ? panel("Identified visitors", "people who've submitted a form — every visit, before and after", `<div class="table-wrap"><table class="data wa-tbl"><thead><tr><th class="no-sort">Person</th><th class="no-sort">Location</th><th class="no-sort">First source</th><th class="no-sort num">Sessions</th><th class="no-sort num">Last seen</th></tr></thead><tbody>${people.map((v) => { const p = this.ids[v]; const ss = A.sess.filter((s) => s.vid === v); const f = ss[0].first; const last = Math.max(...ss.map((s) => s.end)); return `<tr class="clickable" onclick="WA.visitorModal('${H(v)}')"><td><b>${H(p.name || "")}</b> <span class="muted">${H(p.email || "")}</span></td><td>${flag(f.country)} ${H(place(f))}</td><td>${H(f.source)}</td><td class="num mono">${ss.length}</td><td class="num mono">${ago(new Date(last).toISOString())}</td></tr>`; }).join("")}</tbody></table></div>`) : ""}
 
       <div class="panel">
@@ -525,6 +674,7 @@
 
     this.renderSessions();
     this.drawMap(A);
+    this.lbQR(false);
   };
 
   /* ---------------- session list + visitor profile ---------------- */
@@ -631,7 +781,7 @@
     if (window.L) return Promise.resolve(window.L);
     if (leafletP) return leafletP;
     leafletP = new Promise((res, rej) => {
-      const css = document.createElement("link"); css.rel = "stylesheet"; css.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"; document.head.appendChild(css);
+      const css = document.createElement("link"); css.rel = "stylesheet"; css.href = window.WA_LEAFLET_CSS || "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"; document.head.appendChild(css);
       const s = document.createElement("script"); s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"; s.onload = () => res(window.L); s.onerror = rej; document.head.appendChild(s);
     });
     return leafletP;

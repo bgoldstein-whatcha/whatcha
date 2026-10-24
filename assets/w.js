@@ -232,7 +232,14 @@
     var g = w.gtag;
     if (typeof g !== "function" || g.__wa) return;
     var wrapped = function () {
-      try { if (arguments[0] === "event" && arguments[1]) track(String(arguments[1]), arguments[2]); } catch (e) {}
+      try {
+        if (arguments[0] === "event" && arguments[1]) {
+          var nm = String(arguments[1]), pr = arguments[2] || {};
+          // store locator: capture WHAT they searched — demand signal for where to sell
+          if (nm === "store_locator_search") { var zi = d.getElementById("zip-input"); if (zi && zi.value) { pr = Object.assign({}, pr, { query: clip(zi.value.trim(), 40) }); } }
+          track(nm, pr, nm === "age_gate_confirm" && pr && pr.result === "no");
+        }
+      } catch (e) {}
       return g.apply(this, arguments);
     };
     wrapped.__wa = true;
@@ -285,6 +292,49 @@
     if (email || name) identify(email, name, formName);
     flush();
   }, true);
+
+  // ---------- rage clicks (3+ clicks on the same spot within 1s = frustration) ----------
+  var clicks = [];
+  d.addEventListener("click", function (ev) {
+    var t = Date.now();
+    clicks = clicks.filter(function (c) { return t - c.t < 1000; });
+    clicks.push({ t: t, x: ev.clientX, y: ev.clientY });
+    var near = clicks.filter(function (c) { return Math.abs(c.x - ev.clientX) < 30 && Math.abs(c.y - ev.clientY) < 30; });
+    if (near.length === 3) {
+      var el = ev.target;
+      track("rage_click", { text: clip(((el && (el.getAttribute && el.getAttribute("aria-label"))) || (el && el.textContent) || "").replace(/\s+/g, " ").trim(), 80), tag: el && el.tagName ? el.tagName.toLowerCase() : "" });
+    }
+  }, true);
+
+  // ---------- JavaScript errors on the site (max 5 per page) ----------
+  var errCount = 0;
+  w.addEventListener("error", function (e) {
+    if (errCount >= 5 || !e || !e.message) return;
+    errCount++;
+    track("js_error", { message: clip(e.message, 200), source: clip((e.filename || "").replace(loc.origin, "").split("?")[0], 150), line: e.lineno || 0 });
+  });
+
+  // ---------- page speed (Core Web Vitals), sent once when the page is left ----------
+  var vit = {};
+  try {
+    var navT = performance.getEntriesByType("navigation")[0];
+    if (navT) { vit.ttfb = Math.round(navT.responseStart); }
+    var po = function (type, cb) { try { new PerformanceObserver(function (l) { l.getEntries().forEach(cb); }).observe({ type: type, buffered: true }); } catch (e) {} };
+    po("largest-contentful-paint", function (en) { vit.lcp = Math.round(en.startTime); });
+    po("layout-shift", function (en) { if (!en.hadRecentInput) vit.cls = Math.round(((vit.cls || 0) + en.value) * 1000) / 1000; });
+    po("event", function (en) { if (en.interactionId && (!vit.inp || en.duration > vit.inp)) vit.inp = Math.round(en.duration); });
+    po("first-input", function (en) { if (!vit.inp) vit.inp = Math.round(en.processingStart - en.startTime); });
+  } catch (e) {}
+  var vitalsSent = false;
+  function sendVitals() {
+    if (vitalsSent) return;
+    try { var n2 = performance.getEntriesByType("navigation")[0]; if (n2 && n2.loadEventEnd) vit.load = Math.round(n2.loadEventEnd); } catch (e) {}
+    if (vit.lcp == null && vit.ttfb == null) return;
+    vitalsSent = true;
+    track("web_vitals", vit, true);
+  }
+  d.addEventListener("visibilitychange", function () { if (!visible()) sendVitals(); });
+  w.addEventListener("pagehide", sendVitals);
 
   // bfcache restore → count it as a new view
   w.addEventListener("pageshow", function (e) {
