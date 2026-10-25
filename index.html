@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-2ZN64HZ3Q2"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
 
   gtag('config', 'G-2ZN64HZ3Q2');
+  (function(){var l=0;function go(){if(l)return;l=1;var t=document.createElement('script');t.async=true;t.src='https://www.googletagmanager.com/gtag/js?id=G-2ZN64HZ3Q2';document.head.appendChild(t)}if(document.readyState==='complete')setTimeout(go,0);else addEventListener('load',function(){setTimeout(go,0)})})();
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Whatcha Drinking? | Alcohol Pouch Cocktails, Spiked & Ready-to-Drink</title>
@@ -28,11 +28,14 @@
 <meta name="twitter:description" content="Whatcha is a spirits-based, ready-to-drink cocktail pouch, the grown-up juice pouch. 10% ABV, no bubbles, all fun. Squeeze the Day with Spiked Peach Lemonade and Spiked Tropical Punch." />
 <meta name="twitter:image" content="https://www.whatchadrinking.com/assets/images/social/share-banner.png" />
 <link rel="icon" type="image/png" href="assets/images/favicon.png" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400;0,600;0,700;1,600&display=swap" />
+<link rel="preload" href="assets/fonts/bazook-regular.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/ft-buck-regular.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/ft-buck-shadow-regular.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="assets/fonts/nunito-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" as="image" type="image/webp" href="assets/images/pouches/peach-lemonade.webp" imagesrcset="assets/images/pouches/peach-lemonade-540.webp 1x, assets/images/pouches/peach-lemonade.webp 2x" fetchpriority="high" />
+<link rel="preload" as="image" type="image/webp" href="assets/images/pouches/tropical-punch.webp" imagesrcset="assets/images/pouches/tropical-punch-540.webp 1x, assets/images/pouches/tropical-punch.webp 2x" fetchpriority="high" />
+<link rel="preload" as="image" href="assets/images/backgrounds/hero-sky.jpg" fetchpriority="high" />
 <link rel="stylesheet" href="assets/style.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   .claims { background: var(--navy); border-block: 4px solid var(--navy-deep); padding-block: 1rem; }
   .claims__row { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(1.1rem, 4vw, 3rem); }
@@ -121,7 +124,7 @@
 <div class="age-gate" data-age-gate role="dialog" aria-modal="true" aria-labelledby="age-gate-title">
   <div class="age-gate__card">
     <div class="logo-badge">
-      <img src="assets/images/logo/logo-badge-combined.png" alt="Whatcha Drinking?" />
+      <img decoding="async" width="1500" height="1500" src="assets/images/logo/logo-badge-combined.webp" alt="Whatcha Drinking?" />
     </div>
     <h2 id="age-gate-title">Are you 21+?</h2>
     <div class="age-gate__actions">
@@ -134,7 +137,7 @@
 <header class="site-header">
   <div class="container">
     <a href="index.html" class="brand-mark" aria-label="Whatcha Drinking homepage">
-      <img src="assets/images/logo/whatcha-wordmark.png" alt="Whatcha Drinking?" width="180" height="70" />
+      <img decoding="async" src="assets/images/logo/whatcha-wordmark.webp" alt="Whatcha Drinking?" width="180" height="70" />
     </a>
     <button class="nav-toggle" data-nav-toggle aria-label="Open menu" aria-expanded="false">
       <svg class="icon-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg><svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="19" y1="5" x2="5" y2="19"/></svg>
@@ -167,8 +170,8 @@
         <a href="store-locator/store-locator.html" class="btn">Find Whatcha</a>
       </div>
       <div class="hero__pouches" data-parallax>
-        <img src="assets/images/pouches/peach-lemonade.png" alt="Whatcha Spiked Peach Lemonade pouch, 10% alcohol by volume" class="pouch pouch--left" width="410" height="668" loading="eager" />
-        <img src="assets/images/pouches/tropical-punch.png" alt="Whatcha Spiked Tropical Punch pouch, 10% alcohol by volume" class="pouch pouch--right" width="410" height="668" loading="eager" />
+        <img decoding="async" fetchpriority="high" src="assets/images/pouches/peach-lemonade.webp" srcset="assets/images/pouches/peach-lemonade-540.webp 1x, assets/images/pouches/peach-lemonade.webp 2x" alt="Whatcha Spiked Peach Lemonade pouch, 10% alcohol by volume" class="pouch pouch--left" width="410" height="668" loading="eager" />
+        <img decoding="async" fetchpriority="high" src="assets/images/pouches/tropical-punch.webp" srcset="assets/images/pouches/tropical-punch-540.webp 1x, assets/images/pouches/tropical-punch.webp 2x" alt="Whatcha Spiked Tropical Punch pouch, 10% alcohol by volume" class="pouch pouch--right" width="410" height="668" loading="eager" />
       </div>
     </div>
   </section>
@@ -191,7 +194,7 @@
 
       <div class="flavor-grid">
         <article class="flavor-card flavor-card--punch">
-          <img src="assets/images/pouches/tropical-punch.png" alt="Whatcha Spiked Tropical Punch, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
+          <img decoding="async" loading="lazy" src="assets/images/pouches/tropical-punch.webp" srcset="assets/images/pouches/tropical-punch-540.webp 1x, assets/images/pouches/tropical-punch.webp 2x" alt="Whatcha Spiked Tropical Punch, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
           <div class="flavor-card__body">
             <h3>Tropical Punch</h3>
             <p>Mango, passionfruit &amp; cherry, blended with vodka. Bright, juicy, no bubbles required.</p>
@@ -205,7 +208,7 @@
         </article>
 
         <article class="flavor-card flavor-card--peach">
-          <img src="assets/images/pouches/peach-lemonade.png" alt="Whatcha Spiked Peach Lemonade, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
+          <img decoding="async" loading="lazy" src="assets/images/pouches/peach-lemonade.webp" srcset="assets/images/pouches/peach-lemonade-540.webp 1x, assets/images/pouches/peach-lemonade.webp 2x" alt="Whatcha Spiked Peach Lemonade, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
           <div class="flavor-card__body">
             <h3>Peach Lemonade</h3>
             <p>Sun-ripe peach, tart lemonade, and a little bit of trouble. Built for beach days and backyards.</p>
@@ -220,11 +223,11 @@
       </div>
 
       <div class="fruit-row" aria-hidden="true">
-        <img src="assets/images/fruit/fruit-mango.png" alt="" />
-        <img src="assets/images/fruit/fruit-cherries.png" alt="" />
-        <img src="assets/images/fruit/fruit-passionfruit.png" alt="" />
-        <img src="assets/images/fruit/fruit-peach.png" alt="" />
-        <img src="assets/images/fruit/fruit-lemon.png" alt="" />
+        <img decoding="async" loading="lazy" width="2094" height="2323" src="assets/images/fruit/fruit-mango.webp" alt="" />
+        <img decoding="async" loading="lazy" width="1329" height="1566" src="assets/images/fruit/fruit-cherries.webp" alt="" />
+        <img decoding="async" loading="lazy" width="1650" height="1581" src="assets/images/fruit/fruit-passionfruit.webp" alt="" />
+        <img decoding="async" loading="lazy" width="2049" height="2194" src="assets/images/fruit/fruit-peach.webp" alt="" />
+        <img decoding="async" loading="lazy" width="2049" height="2194" src="assets/images/fruit/fruit-lemon.webp" alt="" />
       </div>
     </div>
   </section>
@@ -240,8 +243,8 @@
         <a href="about.html" class="btn btn--navy">Read our story</a>
       </div>
       <div class="story__art">
-        <img class="story__starburst" src="assets/images/logo/starburst.png" alt="" aria-hidden="true" />
-        <img class="story__pouch" src="assets/images/pouches/tropical-punch.png" alt="Whatcha Spiked Tropical Punch pouch" />
+        <img decoding="async" loading="lazy" width="1471" height="1471" class="story__starburst" src="assets/images/logo/starburst.webp" alt="" aria-hidden="true" />
+        <img decoding="async" loading="lazy" width="907" height="1500" class="story__pouch" src="assets/images/pouches/tropical-punch.webp" srcset="assets/images/pouches/tropical-punch-540.webp 1x, assets/images/pouches/tropical-punch.webp 2x" alt="Whatcha Spiked Tropical Punch pouch" />
       </div>
     </div>
   </section>
@@ -327,7 +330,6 @@
   </div>
 </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/main.js"></script>
 </body>
 </html>

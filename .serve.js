@@ -9,7 +9,7 @@ var port = process.argv[2] || 8743;
 var types = {
   '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript',
   '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.json': 'application/json',
-  '.ico': 'image/x-icon',
+  '.ico': 'image/x-icon', '.webp': 'image/webp', '.gif': 'image/gif',
   '.woff2': 'font/woff2', '.woff': 'font/woff',
   '.txt': 'text/plain', '.xml': 'application/xml'
 };

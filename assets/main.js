@@ -219,7 +219,40 @@
     });
   }
 
+  // Leaflet is only needed once the homepage map is close to the viewport, so
+  // it's fetched on demand instead of blocking the first paint.
+  function loadLeaflet(done) {
+    if (window.L) { done(); return; }
+    var css = document.createElement("link");
+    css.rel = "stylesheet";
+    css.href = "/assets/vendor/leaflet/leaflet.css";
+    document.head.appendChild(css);
+    var js = document.createElement("script");
+    js.src = "/assets/vendor/leaflet/leaflet.js";
+    js.onload = done;
+    document.head.appendChild(js);
+  }
+
   function initLocatorMap() {
+    var el = document.getElementById("locator-map");
+    if (!el) return;
+    var started = false;
+    function start() {
+      if (started) return;
+      started = true;
+      loadLeaflet(buildLocatorMap);
+    }
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) { io.disconnect(); start(); }
+      }, { rootMargin: "700px 0px" });
+      io.observe(el);
+    } else {
+      start();
+    }
+  }
+
+  function buildLocatorMap() {
     var el = document.getElementById("locator-map");
     if (!el || typeof L === "undefined") return;
     var venue = [41.1744, -73.1887]; // Hartford HealthCare Amphitheater, Bridgeport, CT

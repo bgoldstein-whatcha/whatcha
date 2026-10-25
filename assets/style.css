@@ -5,10 +5,25 @@
    restrained chrome, one confident focal point per section, real motion.
    ========================================================================== */
 
-/* Nunito Sans is loaded via a <link rel="stylesheet"> in each page's <head>
-   (next to the Google Fonts preconnects) rather than @import here — @import
-   inside a stylesheet is discovered only after the browser has already
-   fetched this file, serializing an extra round-trip before first paint. */
+/* Nunito Sans is self-hosted (latin subset, woff2) and preloaded from each
+   page's <head>, so there is no third-party font request before first paint.
+   One variable file covers 400/600/700; the italic is used for 600 only. */
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("fonts/nunito-sans-normal-latin.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Nunito Sans";
+  src: url("fonts/nunito-sans-italic-latin.woff2") format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 @font-face {
   font-family: "FT Buck";
@@ -94,6 +109,10 @@ body {
 }
 
 img { max-width: 100%; display: block; }
+/* width/height attributes only reserve space (aspect ratio) so lazy images never shift
+   the layout; they must never override the CSS-driven size. :where() keeps this at
+   zero specificity so every component rule still wins. */
+:where(img[width][height]) { height: auto; }
 
 /* FT Buck carries only the single largest statement on a page (h1).
    Everything else — section titles, card titles — reads as Bazook,
@@ -675,7 +694,7 @@ section { position: relative; }
   content: "";
   position: absolute;
   inset: 0;
-  background-image: url("images/patterns/fruit-tile.png");
+  background-image: url("images/patterns/fruit-tile.webp");
   background-size: 190px 190px;
   background-repeat: repeat;
   opacity: 0.55;
