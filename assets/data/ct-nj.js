@@ -61,7 +61,8 @@ window.whatchaAddStates = function (map) {
         if (p[1] < minY) minY = p[1]; if (p[1] > maxY) maxY = p[1];
         sx += p[0]; sy += p[1];
       });
-      var cx0 = sx / ring.length, cy0 = sy / ring.length;
+      // true center of the state's bounding box (the vertex average is skewed by the dense coastline)
+      var cx0 = (minX + maxX) / 2, cy0 = (minY + maxY) / 2;
       var variants = [
         { html: L1.name, cls: "state-label" },
         { html: L1.name.replace(" ", "<br>"), cls: "state-label" },
