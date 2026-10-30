@@ -255,22 +255,14 @@
   function buildLocatorMap() {
     var el = document.getElementById("locator-map");
     if (!el || typeof L === "undefined") return;
-    var venue = [41.1744, -73.1887]; // Hartford HealthCare Amphitheater, Bridgeport, CT
-    var map = L.map(el, { scrollWheelZoom: false }).setView(venue, 12);
+    // generic map: no pins or highlighted areas, centered on the Northeast; the "Where's Whatcha?" button leads to the full locator
+    var map = L.map(el, { scrollWheelZoom: false });
+    // framed on the Northeast (Mid-Atlantic up through New England) rather than the whole country
+    map.fitBounds([[38.6, -79.8], [44.6, -69.0]]);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
       maxZoom: 18
     }).addTo(map);
-    // branded teardrop pin instead of Leaflet's default blue marker — the
-    // tile tint (see .locator__map in style.css) handles the base map
-    var brandPin = L.divIcon({
-      className: "",
-      html: '<div class="locator__pin"></div>',
-      iconSize: [34, 34],
-      iconAnchor: [17, 34],
-      popupAnchor: [0, -34]
-    });
-    L.marker(venue, { icon: brandPin }).addTo(map).bindPopup("<strong>Hartford HealthCare Amphitheater</strong><br>Bridgeport, CT — launch venue").openPopup();
   }
 
   function initMarquee() {

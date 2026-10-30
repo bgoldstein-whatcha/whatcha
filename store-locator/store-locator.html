@@ -214,8 +214,8 @@
        (the live, searchable list renders into #store-list via Supabase) -->
   <noscript>
     <p style="max-width:640px;margin:1.5rem auto;padding-inline:1rem;color:var(--ink);font-size:0.95rem;">
-      Whatcha, the spirits-based, ready-to-drink cocktail pouch (also called a boozy juice pouch, vodka juice pouch, or alcohol pouch), is launching first at the
-      Hartford HealthCare Amphitheater in Bridgeport, CT, with more retail locations being added this season. Search above by zip code for the closest spot carrying Spiked Peach Lemonade or Spiked Tropical Punch.
+      Whatcha, the spirits-based, ready-to-drink cocktail pouch (also called a boozy juice pouch, vodka juice pouch, or alcohol pouch), is in stores now in
+      Connecticut and New Jersey, with store details coming soon. Search above by zip code for the closest spot carrying Spiked Peach Lemonade or Spiked Tropical Punch.
     </p>
   </noscript>
 
@@ -223,7 +223,7 @@
     <div id="sidebar">
       <div id="sidebar-header">Locations (<span id="count">0</span>)</div>
       <div id="loading-state">Loading locations…</div>
-      <div id="no-results">Whatcha is coming soon. Check back soon for retail locations.</div>
+      <div id="no-results">Whatcha is in stores now in Connecticut and New Jersey. Store details coming soon.</div>
       <div id="store-list"></div>
     </div>
     <div id="map"></div>
@@ -234,6 +234,7 @@
 <a class="footer-hq-login locator-hq-login" href="/dashboard">HQ Login</a>
 
 <script src="../assets/vendor/leaflet/leaflet.js"></script>
+<script src="../assets/data/ct-nj.js"></script>
 <script src="../assets/main.js"></script>
 <script>
 // ════════════════════════════════════════════════
@@ -243,7 +244,7 @@
 //  repeat visits don't re-geocode the same address.
 // ════════════════════════════════════════════════
 var STORES = [];
-var map, tileLayer, markers = [], infoPopups = [], activeCard = null, comingSoonPopup = null;
+var map, statesLayer, tileLayer, markers = [], infoPopups = [], activeCard = null, comingSoonPopup = null;
 var GEOCODE_CACHE_KEY = 'whatchaGeocodeCache';
 
 function loadGeocodeCache() {
@@ -396,13 +397,9 @@ async function geocodeAndRender(storesToRender) {
 
   if (rendered === 0) {
     document.getElementById('no-results').style.display = 'block';
-    // no live locations yet — show the "coming soon" notice pinned at map center
-    if (!comingSoonPopup) {
-      comingSoonPopup = L.popup({ closeButton: false, autoClose: false, closeOnClick: false })
-        .setLatLng([39.8283, -98.5795])
-        .setContent('<div class="store-popup"><h3>Coming soon!</h3><p>Whatcha is coming soon. Check back soon for retail locations.</p></div>');
-    }
-    comingSoonPopup.openOn(map);
+    // no individual locations listed yet: frame the shaded CT + NJ (the sidebar carries the
+    // "store details coming soon" message, so no popup covers the map)
+    map.fitBounds(statesLayer.getBounds(), { padding: [30, 30] });
   } else {
     // real locations exist — make sure the placeholder notice isn't floating over them
     if (comingSoonPopup) map.closePopup(comingSoonPopup);
@@ -470,11 +467,14 @@ function refreshStores() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  map = L.map('map', { scrollWheelZoom: false }).setView([39.8283, -98.5795], 4);
+  map = L.map('map', { scrollWheelZoom: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors',
     maxZoom: 18
   }).addTo(map);
+  // Whatcha is in stores in CT and NJ: shade both states (no individual stores shown)
+  statesLayer = window.whatchaAddStates(map);
+  map.fitBounds(statesLayer.getBounds(), { padding: [30, 30] });
 
   fetchStores().then(function (data) {
     STORES = data;
