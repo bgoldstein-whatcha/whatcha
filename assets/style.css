@@ -935,3 +935,7 @@ section { position: relative; }
   min-width: 0;
 }
 .signup .form-status { color: var(--navy); }
+
+/* privacy / legal link in the footer */
+.footer-legal-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .footer-legal-link:hover { color: var(--yellow); } }
