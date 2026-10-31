@@ -210,6 +210,11 @@
     .signoff { margin-bottom: 0.5rem; }
   }
 
+  /* ---------- flavors module ---------- */
+  .wla-flavors { position: relative; overflow: hidden; }
+  .wla-flavors .flavors__head { margin-bottom: clamp(2rem, 5vw, 3rem); }
+  .wla-flavors .flavors__head .fs-body-lg { margin-top: 0.5rem; text-wrap: balance; }
+
   /* ---------- community section ---------- */
   .wla-community { background: var(--teal); }
   .wla-community h2 { color: var(--navy); }
@@ -334,6 +339,48 @@
             <p class="wla-flip__hint">(tap to find out)</p>
           </button>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider" aria-hidden="true"></div>
+  <section id="flavors" class="flavors wla-flavors section-pad sparkle-field">
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--coral); top:6%; right:8%;"></span>
+    <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--sky); bottom:8%; left:7%;"></span>
+    <div class="container">
+      <div class="text-center flavors__head">
+        <h2>Can't pick just one?</h2>
+        <p class="fs-body-lg">Good news, you don't have to. Try them both.</p>
+      </div>
+
+      <div class="flavor-grid">
+        <article class="flavor-card flavor-card--punch">
+          <img decoding="async" loading="lazy" src="../assets/images/pouches/tropical-punch.webp" srcset="../assets/images/pouches/tropical-punch-540.webp 1x, ../assets/images/pouches/tropical-punch.webp 2x" alt="Whatcha Spiked Tropical Punch, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
+          <div class="flavor-card__body">
+            <h3>Tropical Punch</h3>
+            <p>Mango, passionfruit &amp; cherry, blended with vodka. Bright, juicy, no bubbles required.</p>
+            <ul class="flavor-chips">
+              <li>10% ALC/VOL</li>
+              <li>3g Added Sugar</li>
+              <li>6.7 FL OZ</li>
+              <li>Gluten Free</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="flavor-card flavor-card--peach">
+          <img decoding="async" loading="lazy" src="../assets/images/pouches/peach-lemonade.webp" srcset="../assets/images/pouches/peach-lemonade-540.webp 1x, ../assets/images/pouches/peach-lemonade.webp 2x" alt="Whatcha Spiked Peach Lemonade, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
+          <div class="flavor-card__body">
+            <h3>Peach Lemonade</h3>
+            <p>Sun-ripe peach, tart lemonade, and a little bit of trouble. Built for beach days and backyards.</p>
+            <ul class="flavor-chips">
+              <li>10% ALC/VOL</li>
+              <li>3g Added Sugar</li>
+              <li>6.7 FL OZ</li>
+              <li>Gluten Free</li>
+            </ul>
+          </div>
+        </article>
       </div>
     </div>
   </section>
