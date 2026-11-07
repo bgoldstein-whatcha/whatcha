@@ -939,3 +939,36 @@ section { position: relative; }
 /* privacy / legal link in the footer */
 .footer-legal-link { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) { .footer-legal-link:hover { color: var(--yellow); } }
+
+/* ---------- Instagram feed grid ---------- */
+.wla-ig { margin: 2rem auto 0; max-width: 1000px; }
+.wla-ig__grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(0.75rem, 2vw, 1.25rem); }
+.wla-ig__tile, .wla-ig__ph {
+  position: relative; display: block; aspect-ratio: 4 / 5; overflow: hidden;
+  border: 4px solid var(--navy); border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft); background: rgba(255,255,255,0.35);
+}
+.wla-ig__ph { animation: wlaPulse 1.4s ease-in-out infinite; }
+@keyframes wlaPulse { 50% { opacity: 0.5; } }
+@media (prefers-reduced-motion: reduce) { .wla-ig__ph { animation: none; } }
+.wla-ig__slide, .wla-ig__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.wla-ig__slide { opacity: 0; transition: opacity 0.7s ease; }
+.wla-ig__slide.is-on { opacity: 1; }
+.wla-ig__video { opacity: 0; transition: opacity 0.4s ease; background: transparent; }
+.wla-ig__tile.is-playing .wla-ig__video { opacity: 1; }
+@media (hover: hover) { .wla-ig__tile:hover .wla-ig__cap { opacity: 1; } }
+.wla-ig__tile:focus-visible { outline: 3px solid var(--yellow); outline-offset: 2px; }
+.wla-ig__dots { position: absolute; left: 0; right: 0; bottom: 8px; display: flex; justify-content: center; gap: 5px; pointer-events: none; }
+.wla-ig__dots i { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.55); box-shadow: 0 0 0 1px rgba(5,38,197,0.5); }
+.wla-ig__dots i.is-on { background: #fff; }
+.wla-ig__cap {
+  position: absolute; inset: auto 0 0 0; padding: 1.4rem 0.7rem 0.6rem; opacity: 0; transition: opacity 0.25s ease; z-index: 2;
+  background: linear-gradient(transparent, rgba(5,38,197,0.88)); color: #fff; font-size: 0.8rem; line-height: 1.3; text-align: left;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.wla-ig__more { margin-top: 1.75rem; }
+@media (max-width: 700px) { .wla-ig__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.ig-section { background: var(--sky); border-bottom: 4px solid var(--navy); }
+.ig-section h2 { color: var(--navy); }
+.ig-section .fs-body-lg { color: var(--navy); max-width: 520px; margin-inline: auto; }
