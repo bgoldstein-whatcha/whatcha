@@ -301,8 +301,13 @@
       }
 
       build();
-      var resizeTimer;
+      var resizeTimer, lastWidth = window.innerWidth;
       window.addEventListener("resize", function () {
+        // phones fire resize (height only) as the URL bar slides away while
+        // scrolling; rebuilding then restarts the bar mid-scroll, so only
+        // rebuild when the width actually changed (rotation / window resize)
+        if (window.innerWidth === lastWidth) return;
+        lastWidth = window.innerWidth;
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(build, 200);
       });
