@@ -279,7 +279,7 @@
         track.style.animation = "none";
         track.innerHTML = "";
         baseItems.forEach(function (item) { track.appendChild(item.cloneNode(true)); });
-        var minWidth = Math.max(window.innerWidth, 1600) * 2.5;
+        var minWidth = Math.max(window.innerWidth, 480) * 1.5; // kept modest: very wide animated layers flicker in iOS Safari
         // repeat the base cycle until comfortably wider than any viewport
         var guard = 0;
         while (track.scrollWidth < minWidth && guard < 40) {

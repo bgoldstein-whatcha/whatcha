@@ -311,14 +311,22 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   overflow: hidden;
   white-space: nowrap;
   padding-block: 0.65rem;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 .marquee__track {
   display: inline-flex;
   align-items: center;
-  gap: 1.1rem;
   width: max-content;
   animation: marquee 24s linear infinite;
+  /* own compositor layer so iOS Safari doesn't repaint the bar while the page scrolls */
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
+/* spacing via margin (not flex gap) so the track is exactly N whole cycles wide
+   and translateX(-50%) loops with no jump at the seam */
+.marquee__track > * { margin-right: 1.1rem; flex: none; }
 .marquee__word {
   font-family: var(--font-ui);
   font-weight: 700;
@@ -332,8 +340,8 @@ a, button, summary, .btn { -webkit-tap-highlight-color: transparent; }
   font-size: clamp(0.85rem, 0.5vw + 0.6rem, 1rem);
 }
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
 }
 @media (prefers-reduced-motion: reduce) {
   .marquee__track { animation: none; }
