@@ -1,0 +1,98 @@
+/* ============================================================
+   Whatcha HQ — Import + Insights screens
+   Uses the design tokens from dashboard.css.
+   ============================================================ */
+
+/* ---------- step tracker ---------- */
+.imp-steps { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 18px; }
+.imp-step { display: flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 13px; letter-spacing: .02em; color: var(--muted); background: #fff; border: 2px solid var(--line); border-radius: 999px; padding: 5px 14px 5px 6px; }
+.imp-step span { width: 22px; height: 22px; border-radius: 50%; background: var(--line); color: var(--muted); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+.imp-step.is-on { color: var(--ink); border-color: var(--ink); background: var(--yellow); box-shadow: var(--shadow-hard-sm); }
+.imp-step.is-on span { background: var(--ink); color: #fff; }
+.imp-step.is-done { color: var(--ink); border-color: var(--teal); }
+.imp-step.is-done span { background: var(--teal); color: #fff; }
+
+/* ---------- busy / error ---------- */
+.imp-busy { display: flex; align-items: center; gap: 14px; font-family: var(--font-ui); }
+.imp-spin { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--navy); border-radius: 50%; animation: impspin .8s linear infinite; flex: none; }
+@keyframes impspin { to { transform: rotate(360deg); } }
+.imp-error { border-color: var(--danger); background: #fff5f5; font-size: 14px; }
+
+/* ---------- upload ---------- */
+.imp-uprow { display: flex; gap: 18px; align-items: flex-end; flex-wrap: wrap; }
+.imp-uprow .field label { margin-bottom: 6px; }
+.imp-file { display: flex; align-items: center; gap: 12px; background: #fff; border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 8px 12px; flex: 1; min-width: 260px; }
+.imp-file__ico { font-size: 24px; }
+.imp-file .btn { margin-left: auto; }
+.imp-drop {
+  display: block; margin-top: 16px; text-align: center; cursor: pointer; padding: 38px 20px;
+  border: 3px dashed var(--navy); border-radius: var(--radius); background: var(--sky-pale);
+  transition: background .12s ease, transform .12s ease;
+}
+.imp-drop:hover, .imp-drop.is-over { background: var(--yellow); transform: translateY(-1px); }
+.imp-drop__ico { font-size: 40px; }
+.imp-drop__t { font-family: var(--font-ui); font-size: 20px; margin: 6px 0 2px; }
+.imp-drop__s { color: var(--muted); font-size: 14px; }
+
+/* ---------- mapping ---------- */
+.imp-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 4px 16px; margin-bottom: 6px; }
+.imp-req { font-family: var(--font-ui); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: var(--coral-deep); margin-left: 4px; }
+.imp-map select, .imp-match { width: 100%; max-width: 300px; padding: 7px 9px; border: 2px solid var(--line); border-radius: 10px; background: #fff; font-size: 14px; }
+.imp-map select:focus, .imp-match:focus { outline: none; border-color: var(--navy); }
+.imp-sample { font-size: 12px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imp-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--line); }
+.imp-problems { color: var(--warn); font-size: 13px; line-height: 1.5; }
+
+/* ---------- review ---------- */
+.imp-kpis { margin-bottom: 14px; }
+.imp-kpis .kpi__value { font-size: 28px; }
+.imp-optrow { display: flex; flex-direction: column; gap: 8px; background: #fff; border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 8px; font-size: 14px; }
+.imp-optrow label { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+.imp-optrow input { width: auto; }
+.imp-scroll { max-height: 440px; overflow-y: auto; border: 2px solid var(--line); }
+.imp-sure { margin: 14px 0 6px; }
+.imp-sure > summary { cursor: pointer; font-family: var(--font-ui); font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+.chip--sure { background: var(--sage); }
+.chip--check { background: #fff3c4; }
+.chip--review { background: #ffd9c9; }
+
+/* ---------- done ---------- */
+.imp-done { text-align: center; padding: 28px 20px; background: linear-gradient(160deg, var(--teal-pale), var(--sky-pale)); }
+.imp-done__ico { font-size: 44px; }
+.imp-done h3 { font-size: 20px; }
+
+/* ---------- dashboard nudge ---------- */
+.imp-fresh { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: #fff8c9; padding: 14px 18px; }
+.imp-fresh__ico { font-size: 26px; }
+.imp-fresh__body { flex: 1; min-width: 220px; }
+.imp-fresh__t { font-family: var(--font-ui); font-size: 15px; }
+.imp-fresh__x { font-size: 13px; color: #3a3a5c; margin-top: 2px; line-height: 1.5; }
+
+/* ---------- insights ---------- */
+.ins-filters { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.ins-filters select { padding: 8px 12px; border: 2px solid var(--line); border-radius: 999px; background: #fff; font-family: var(--font-ui); font-size: 13px; }
+.ins-asof { color: var(--muted); font-size: 13px; margin: 0 2px 16px; }
+.ins-asof strong { color: var(--ink); }
+.ins-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+.ins-story { display: flex; gap: 12px; background: #fff; border: 2px solid var(--line); border-left: 6px solid var(--sky); border-radius: var(--radius-sm); padding: 12px 14px; }
+.ins-story.ins-good { border-left-color: var(--teal); }
+.ins-story.ins-warn { border-left-color: var(--coral); }
+.ins-story__ico { font-size: 24px; line-height: 1.1; flex: none; }
+.ins-story__t { font-family: var(--font-ui); font-size: 15px; margin-bottom: 2px; }
+.ins-story__x { font-size: 13px; color: #3a3a5c; line-height: 1.45; }
+.ins-link { display: inline-block; margin-top: 6px; font-family: var(--font-ui); font-size: 12px; color: var(--navy); }
+.ins-delta { font-family: var(--font-ui); font-size: 12px; }
+.ins-delta.up, .ins-up { color: var(--ok); }
+.ins-delta.down, .ins-down { color: var(--danger); }
+.ins-stories { margin-bottom: 20px; }
+
+@media (max-width: 640px) {
+  .imp-drop { padding: 28px 14px; }
+  .imp-uprow { flex-direction: column; align-items: stretch; gap: 12px; }
+  .imp-uprow .field { min-width: 0 !important; }
+  .imp-file { min-width: 0; width: 100%; flex-wrap: wrap; }
+  .imp-file > div { flex: 1; min-width: 0; word-break: break-all; }
+  .imp-file .btn { margin-left: 0; width: 100%; justify-content: center; }
+  .imp-actions .btn { width: 100%; justify-content: center; }
+  .imp-opts { grid-template-columns: 1fr; }
+}

@@ -10,7 +10,16 @@
 
 const CONFIG = {
   // Flip to 'supabase' once keys are wired in config.js (see README).
-  backend: (window.WHATCHA_CONFIG && window.WHATCHA_CONFIG.backend) || "local",
+  // Dev safety valve: opening http://localhost:…/?mode=local forces the
+  // browser-only demo backend so testing never touches the live database.
+  // (Only honored on localhost — it does nothing on the real site.)
+  backend: (function () {
+    try {
+      const host = location.hostname;
+      if ((host === "localhost" || host === "127.0.0.1") && new URLSearchParams(location.search).get("mode") === "local") return "local";
+    } catch (e) {}
+    return (window.WHATCHA_CONFIG && window.WHATCHA_CONFIG.backend) || "local";
+  })(),
 };
 
 const uid = (p = "id") =>
@@ -219,6 +228,7 @@ const LS_KEY = "whatcha_dashboard_v1";
 
 const LocalBackend = {
   _state: null,
+  version: 0, // bumped on every write — the DB facade uses it to cache derived data
   _load() {
     if (this._state) return this._state;
     const raw = localStorage.getItem(LS_KEY);
@@ -230,11 +240,28 @@ const LocalBackend = {
     }
     return this._state;
   },
-  _save() { localStorage.setItem(LS_KEY, JSON.stringify(this._state)); },
+  _save() { this.version++; localStorage.setItem(LS_KEY, JSON.stringify(this._state)); },
   reset() { this._state = seedData(); this._save(); },
 
-  all(coll) { return JSON.parse(JSON.stringify(this._load()[coll] || [])); },
+  // Shallow copy of the array (callers may sort it) — rows themselves are shared,
+  // which is what keeps big collections (thousands of imported orders) fast.
+  all(coll) { return (this._load()[coll] || []).slice(); },
   raw(coll) { return this._load()[coll] || []; },
+
+  // Generic key/value store (remembered import mappings, import history…)
+  kvGet(k, d) { const s = this._load(); return s.kv && s.kv[k] !== undefined ? s.kv[k] : d; },
+  kvSet(k, v) { const s = this._load(); s.kv = s.kv || {}; s.kv[k] = v; this._save(); },
+
+  // Bulk write helpers (one save instead of one per row)
+  upsertMany(coll, rows) {
+    const s = this._load(); const idx = new Map(s[coll].map((r, i) => [r.id, i]));
+    rows.forEach((r) => { const i = idx.get(r.id); if (i == null) { idx.set(r.id, s[coll].length); s[coll].push(r); } else s[coll][i] = r; });
+    this._save(); return Promise.resolve();
+  },
+  removeMany(coll, ids) {
+    const set = new Set(ids), s = this._load();
+    s[coll] = s[coll].filter((r) => !set.has(r.id)); this._save(); return Promise.resolve();
+  },
 
   insert(coll, row) {
     const s = this._load();
@@ -271,19 +298,37 @@ const SupabaseBackend = {
 
   // Pull all of the logged-in user's rows into the cache. Seeds a minimal
   // starter set (products + CT pricing) the very first time.
+  version: 0, // bumped on every write — the DB facade uses it to cache derived data
+
+  // Supabase caps every query at 1,000 rows, so page through until we have
+  // everything (distributor reports easily push orders well past that).
+  async _fetchAll(table, cols) {
+    const out = [], step = 1000;
+    for (let from = 0; ; from += step) {
+      const { data, error } = await this.sb.from(table).select(cols).order("id").range(from, from + step - 1);
+      if (error) throw error;
+      out.push(...(data || []));
+      if (!data || data.length < step) break;
+    }
+    return out;
+  },
+
   async hydrate() {
     const state = {};
     for (const c of this.COLLS) {
-      const { data, error } = await this.sb.from(c).select("id,data");
-      if (error) throw error;
-      state[c] = (data || []).map((r) => ({ ...r.data, id: r.id }));
+      const rows = await this._fetchAll(c, "id,data");
+      state[c] = rows.map((r) => ({ ...r.data, id: r.id }));
     }
     const kv = await this.sb.from("app_kv").select("value").eq("key", "dismissed_recs").maybeSingle();
     state.dismissed_recs = (kv.data && kv.data.value) || [];
     const kv2 = await this.sb.from("app_kv").select("value").eq("key", "settings").maybeSingle();
     state.settings = (kv2.data && kv2.data.value) || {};
+    // every app_kv row, for the generic key/value store (import mappings + history)
+    const kvAll = await this.sb.from("app_kv").select("key,value");
+    state.kv = {}; (kvAll.data || []).forEach((r) => { state.kv[r.key] = r.value; });
     this._state = state;
     this.ready = true;
+    this.version++;
     if (!state.products.length) await this._seedInitial();
     return state;
   },
@@ -304,16 +349,26 @@ const SupabaseBackend = {
   _save() {
     // Only app-level kv (dismissed recs) needs a blanket save; rows persist per-write.
     if (!this._state) return;
+    this.version++;
     this.sb.from("app_kv").upsert({ key: "dismissed_recs", value: this._state.dismissed_recs || [] }).then(({ error }) => { if (error) this._warn(error); });
     this.sb.from("app_kv").upsert({ key: "settings", value: this._state.settings || {} }).then(({ error }) => { if (error) this._warn(error); });
   },
 
-  all(coll) { return JSON.parse(JSON.stringify(this._state[coll] || [])); },
+  // Shallow copy — rows are shared so large collections stay fast.
+  all(coll) { return (this._state[coll] || []).slice(); },
   raw(coll) { return this._state[coll] || []; },
+
+  // Generic key/value store (remembered import mappings, import history…)
+  kvGet(k, d) { const kv = (this._state && this._state.kv) || {}; return kv[k] !== undefined ? kv[k] : d; },
+  kvSet(k, v) {
+    this._state.kv = this._state.kv || {}; this._state.kv[k] = v; this.version++;
+    this.sb.from("app_kv").upsert({ key: k, value: v }).then(({ error }) => { if (error) this._warn(error); });
+  },
 
   insert(coll, row) {
     if (!row.id) row.id = uid(coll.slice(0, 3));
     this._state[coll].push(row);
+    this.version++;
     this._put(coll, row);
     return row;
   },
@@ -321,16 +376,42 @@ const SupabaseBackend = {
     const i = this._state[coll].findIndex((r) => r.id === id);
     if (i < 0) return null;
     this._state[coll][i] = { ...this._state[coll][i], ...patch };
+    this.version++;
     this._put(coll, this._state[coll][i]);
     return this._state[coll][i];
   },
   remove(coll, id) {
     this._state[coll] = this._state[coll].filter((r) => r.id !== id);
+    this.version++;
     this.sb.from(coll).delete().eq("id", id).then(({ error }) => { if (error) this._warn(error); });
   },
   replaceAll(coll, rows) {
     this._state[coll] = rows;
+    this.version++;
     if (this.COLLS.includes(coll)) this.sb.from(coll).upsert(rows.map((r) => ({ id: r.id, data: r }))).then(({ error }) => { if (error) this._warn(error); });
+  },
+
+  // Bulk write: update the cache instantly, then persist in chunks. Returns a
+  // promise that REJECTS if any chunk fails, so the importer can tell the user
+  // (re-running the same file is safe — it never double-counts).
+  async upsertMany(coll, rows) {
+    const arr = this._state[coll]; const idx = new Map(arr.map((r, i) => [r.id, i]));
+    rows.forEach((r) => { const i = idx.get(r.id); if (i == null) { idx.set(r.id, arr.length); arr.push(r); } else arr[i] = r; });
+    this.version++;
+    for (let i = 0; i < rows.length; i += 300) {
+      const chunk = rows.slice(i, i + 300).map((r) => ({ id: r.id, data: r }));
+      const { error } = await this.sb.from(coll).upsert(chunk);
+      if (error) { this._warn(error); throw error; }
+    }
+  },
+  async removeMany(coll, ids) {
+    const set = new Set(ids);
+    this._state[coll] = this._state[coll].filter((r) => !set.has(r.id));
+    this.version++;
+    for (let i = 0; i < ids.length; i += 150) {
+      const { error } = await this.sb.from(coll).delete().in("id", ids.slice(i, i + 150));
+      if (error) { this._warn(error); throw error; }
+    }
   },
   reset() { this._warn({ message: "Reset is disabled in live mode." }); },
 };
@@ -350,13 +431,26 @@ const DB = {
   orders() { return this.backend.all("orders"); },
   exports() { return this.backend.all("exports"); },
 
-  product(id) { return this.products().find((p) => p.id === id); },
-  distributor(id) { return this.distributors().find((d) => d.id === id); },
-  store(id) { return this.stores().find((s) => s.id === id); },
+  // ---- derived-data cache: recomputed only when the backend's version changes ----
+  _c: {},
+  _cached(name, fn) {
+    const b = this.backend, v = b.version || 0, e = this._c[name];
+    if (e && e.v === v && e.b === b) return e.val;
+    const val = fn(); this._c[name] = { v, b, val }; return val;
+  },
+  _idx(coll) { return this._cached("idx:" + coll, () => { const m = new Map(); (this.backend.raw(coll) || []).forEach((r) => m.set(r.id, r)); return m; }); },
+
+  product(id) { return this._idx("products").get(id); },
+  distributor(id) { return this._idx("distributors").get(id); },
+  store(id) { return this._idx("stores").get(id); },
 
   insert(c, r) { return this.backend.insert(c, r); },
   update(c, id, p) { return this.backend.update(c, id, p); },
   remove(c, id) { return this.backend.remove(c, id); },
+  upsertMany(c, rows) { return this.backend.upsertMany(c, rows); },
+  removeMany(c, ids) { return this.backend.removeMany(c, ids); },
+  kvGet(k, d) { return this.backend.kvGet(k, d); },
+  kvSet(k, v) { return this.backend.kvSet(k, v); },
   reset() { this.backend.reset(); },
 
   /* ---------- PRICING ENGINE ---------- */
@@ -394,7 +488,17 @@ const DB = {
     return { ...order, store_name: store ? store.name : "—", state, lines, cases, units, total, hasMissing };
   },
 
-  pricedOrders() { return this.orders().map((o) => this.priceOrder(o)); },
+  // Cached per data-version: with thousands of imported orders, recomputing
+  // this on every render (and once per account row) would freeze the app.
+  pricedOrders() { return this._cached("po", () => this.orders().map((o) => this.priceOrder(o))).slice(); },
+  _ordersByStore() {
+    return this._cached("byStore", () => {
+      const m = new Map();
+      this._cached("po", () => this.orders().map((o) => this.priceOrder(o))).forEach((o) => { let a = m.get(o.store_id); if (!a) m.set(o.store_id, (a = [])); a.push(o); });
+      m.forEach((a) => a.sort((x, y) => x.date.localeCompare(y.date)));
+      return m;
+    });
+  },
 
   /* ---------- ANALYTICS ---------- */
   analytics(opts = {}) {
@@ -472,7 +576,7 @@ const DB = {
   },
 
   storeStats(store_id) {
-    const ords = this.pricedOrders().filter((o) => o.store_id === store_id).sort((a, b) => a.date.localeCompare(b.date));
+    const ords = (this._ordersByStore().get(store_id) || []).slice();
     const revenue = ords.reduce((a, o) => a + o.total, 0);
     const cases = ords.reduce((a, o) => a + o.cases, 0);
     return { orders: ords, revenue, cases, count: ords.length, last: ords.length ? ords[ords.length - 1].date : null };

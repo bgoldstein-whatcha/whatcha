@@ -19,6 +19,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/dashboard.css">
   <link rel="stylesheet" href="assets/css/traffic.css">
+  <link rel="stylesheet" href="assets/css/import.css">
 </head>
 <body>
 
@@ -77,9 +78,14 @@
   <!-- config first (sets backend mode), then supabase client, data, charts, app -->
   <script src="config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- spreadsheet reader for distributor reports (CSV / XLSX / XLS) -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/charts.js"></script>
+  <script src="assets/js/importer.js"></script>
+  <script src="assets/js/insights.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/traffic.js"></script>
+  <script src="assets/js/import-ui.js"></script>
 </body>
 </html>

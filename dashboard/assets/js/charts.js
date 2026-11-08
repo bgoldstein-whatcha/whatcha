@@ -100,6 +100,32 @@ const Charts = {
     </div>`;
   },
 
+  // Stacked columns: data = [{label, values:{seriesName:number}}], series = [{name, color}]
+  stacked(data, series, opts = {}) {
+    const { height = 230 } = opts;
+    if (!data.length) return `<div class="t-empty">No data yet</div>`;
+    const W = 640, H = height, padL = 40, padB = 30, padT = 16, padR = 8;
+    const totals = data.map((d) => series.reduce((a, s) => a + (d.values[s.name] || 0), 0));
+    const max = Math.max(...totals, 1);
+    const bw = (W - padL - padR) / data.length;
+    const y = (v) => padT + (1 - v / max) * (H - padT - padB);
+    const nice = (n) => n >= 100 ? Math.round(n).toLocaleString() : (Math.round(n * 10) / 10).toLocaleString();
+    let grid = "";
+    for (let i = 0; i <= 4; i++) { const gv = (max / 4) * i, gy = y(gv); grid += `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="#e7e6f2"/><text x="${padL - 6}" y="${gy + 4}" text-anchor="end" font-size="10" fill="#6b6b86">${nice(gv)}</text>`; }
+    const cols = data.map((d, i) => {
+      const x = padL + i * bw + bw * 0.16, w = bw * 0.68; let acc = 0;
+      const segs = series.map((s) => {
+        const v = d.values[s.name] || 0; if (!v) return "";
+        const y0 = y(acc + v), y1 = y(acc); acc += v;
+        return `<rect x="${x}" y="${y0}" width="${w}" height="${Math.max(y1 - y0, 0)}" fill="${s.color}" stroke="#12123a" stroke-width="1.5"><title>${s.name}: ${nice(v)}</title></rect>`;
+      }).join("");
+      const lbl = d.label.length > 7 ? d.label.slice(2) : d.label;
+      return `<g>${segs}<text x="${x + w / 2}" y="${y(totals[i]) - 5}" text-anchor="middle" font-size="10" font-weight="700" fill="#12123a">${nice(totals[i])}</text><text x="${x + w / 2}" y="${H - padB + 15}" text-anchor="middle" font-size="10" fill="#6b6b86">${lbl}</text></g>`;
+    }).join("");
+    const legend = series.map((s) => `<span><span class="dot" style="background:${s.color}"></span>${s.name}</span>`).join("");
+    return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img">${grid}${cols}</svg><div class="bar-legend">${legend}</div>`;
+  },
+
   colorFor(i) { return PALETTE[i % PALETTE.length]; },
 };
 

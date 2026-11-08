@@ -230,6 +230,11 @@ const App = {
       return (va - vb) * dir;
     });
 
+    // Distributor imports can mean thousands of orders — render a page at a time.
+    const limit = this.ordersLimit || 200, total = ords.length;
+    ords = ords.slice(0, limit);
+    const cs = (n) => +(n || 0).toFixed(2); // imported unit counts can be fractional cases
+
     const head = [
       ["date", "Date"], ["store_name", "Account"], ["state", "State"],
       ["cases", "Cases", "num"], ["total", "Total", "num"],
@@ -238,11 +243,12 @@ const App = {
       <div class="btn-row" style="margin-bottom:18px">
         <button class="btn btn--coral" onclick="App.quickSaleModal()">＋ New sale (store + order)</button>
         <button class="btn btn--ghost" onclick="App.orderModal()">Order for existing store</button>
+        <button class="btn btn--ghost" onclick="App.go('import')">📥 Import distributor report</button>
         <span class="spacer" style="flex:1"></span>
         <button class="btn btn--ghost" onclick="App.exportSalesModal()">⬇ Export sales (CSV)</button>
       </div>
       <div class="panel">
-        <div class="panel__head"><h3>${ords.length} order${ords.length === 1 ? "" : "s"}</h3></div>
+        <div class="panel__head"><h3>${total.toLocaleString()} order${total === 1 ? "" : "s"}</h3>${total > ords.length ? `<span class="muted" style="font-size:12px">showing the first ${ords.length.toLocaleString()}</span>` : ""}</div>
         <div class="table-wrap"><table class="data">
           <thead><tr>
             ${head.map(([k, l, cls]) => `<th class="${cls || ""}" data-sort="${k}">${l} ${this.ordersSort.key === k ? `<span class="arrow">${dir > 0 ? "▲" : "▼"}</span>` : ""}</th>`).join("")}
@@ -252,15 +258,16 @@ const App = {
           ${ords.map((o) => `
             <tr class="clickable" onclick="App.orderModal('${o.id}')">
               <td>${fmtDate(o.date)}</td>
-              <td>${esc(o.store_name)}${o.hasMissing ? ' <span class="chip chip--sm" style="background:#ffe0e0">no price</span>' : ""}</td>
+              <td>${esc(o.store_name)}${o.hasMissing ? ' <span class="chip chip--sm" style="background:#ffe0e0">no price</span>' : ""}${o.source === "import" ? ' <span class="chip chip--sm chip--exported" title="From a distributor report">📥 report</span>' : o.confirmed_date ? ' <span class="chip chip--sm chip--active" title="Confirmed by a distributor report">✓ confirmed</span>' : ""}</td>
               <td><span class="chip chip--sm">${o.state}</span></td>
-              <td class="num mono">${o.cases}</td>
+              <td class="num mono">${cs(o.cases)}</td>
               <td class="num mono">${fmtMoney2(o.total)}</td>
-              <td class="muted" style="font-size:12px">${o.lines.map((l) => `${l.cases}× ${l.product_name.replace("Spiked ", "")}`).join(", ")}</td>
+              <td class="muted" style="font-size:12px">${o.lines.map((l) => `${cs(l.cases)}× ${l.product_name.replace("Spiked ", "")}`).join(", ")}</td>
               <td class="right"><button class="btn btn--ghost btn--sm" onclick="event.stopPropagation();App.deleteOrder('${o.id}')">Delete</button></td>
-            </tr>`).join("") || `<tr><td colspan="7" class="t-empty">No orders yet — add your first one.</td></tr>`}
+            </tr>`).join("") || `<tr><td colspan="7" class="t-empty">No orders yet — add your first one, or import a distributor report.</td></tr>`}
           </tbody>
         </table></div>
+        ${total > ords.length ? `<div style="margin-top:12px"><button class="btn btn--ghost" onclick="App.ordersLimit=(App.ordersLimit||200)+300;App.renderOrders()">Show ${Math.min(300, total - ords.length).toLocaleString()} more</button></div>` : ""}
       </div>`;
     $("#view").innerHTML = html;
     $$("[data-sort]").forEach((th) => th.onclick = () => {
@@ -1671,12 +1678,22 @@ const App = {
       </div>
       <div class="panel">
         <div class="panel__head"><h3>Products</h3></div>
+        <p class="muted" style="margin:-4px 0 12px;max-width:620px;font-size:13px"><strong>Pouches per case</strong> is used to turn a distributor's pouch counts into cases when you import their reports — make sure it matches your real case size.</p>
         <div class="table-wrap"><table class="data" style="min-width:auto">
-          <thead><tr><th class="no-sort">Product</th><th class="no-sort">SKU</th><th class="no-sort num">Units / case</th></tr></thead>
-          <tbody>${products.map((p) => `<tr><td>${esc(p.name)}</td><td class="mono">${p.sku}</td><td class="num mono">${p.units_per_case}</td></tr>`).join("")}</tbody>
+          <thead><tr><th class="no-sort">Product</th><th class="no-sort">SKU</th><th class="no-sort num">Pouches / case</th></tr></thead>
+          <tbody>${products.map((p) => `<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.sku || "")}</td><td class="num"><input type="number" min="1" step="1" style="width:84px;padding:6px 8px" value="${p.units_per_case}" data-prod-units="${p.id}"></td></tr>`).join("")}</tbody>
         </table></div>
+        <div class="btn-row" style="margin-top:14px"><button class="btn btn--primary" onclick="App.saveProducts()">Save products</button></div>
       </div>`;
     $("#view").innerHTML = html;
+  },
+  saveProducts() {
+    let n = 0;
+    $$("[data-prod-units]").forEach((el) => {
+      const v = parseInt(el.value, 10), p = DB.product(el.dataset.prodUnits);
+      if (p && v > 0 && v !== p.units_per_case) { DB.update("products", p.id, { units_per_case: v }); n++; }
+    });
+    this.toast(n ? `Saved — ${n} product${n === 1 ? "" : "s"} updated` : "No changes to save"); this.renderPricing();
   },
   addState() {
     const have = new Set(DB.pricing().map((p) => p.state));
