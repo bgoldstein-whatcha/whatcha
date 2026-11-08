@@ -23,9 +23,14 @@ const Insights = {
 
   compute(opts = {}) {
     const dist = opts.dist || "all", period = String(opts.period || "90");
-    const all = DB.pricedOrders().filter((o) => dist === "all" || o.distributor_id === dist);
-    if (!all.length) return { empty: true };
+    const pool = DB.pricedOrders().filter((o) => dist === "all" || o.distributor_id === dist);
     const sum = (arr, f) => arr.reduce((a, o) => a + f(o), 0);
+    // A running-total ("year to date") report's FIRST import is a starting balance with no real dates —
+    // keep it out of trends/momentum so it can't masquerade as a one-day spike.
+    const baselineOrders = pool.filter((o) => o.ytd_baseline);
+    const baseline = baselineOrders.length ? { cases: sum(baselineOrders, (o) => o.cases), stores: new Set(baselineOrders.map((o) => o.store_id)).size, asOf: baselineOrders.map((o) => o.date).sort().pop() } : null;
+    const all = pool.filter((o) => !o.ytd_baseline);
+    if (!all.length) return { empty: true, baseline };
 
     const dates = all.map((o) => o.date).sort();
     const first = dates[0], asOf = dates[dates.length - 1];
@@ -74,7 +79,8 @@ const Insights = {
     all.forEach((o) => { let s = byStore.get(o.store_id); if (!s) byStore.set(o.store_id, (s = { id: o.store_id, name: o.store_name, state: o.state, orders: [] })); s.orders.push(o); });
     const accts = [];
     byStore.forEach((s) => {
-      const ds = [...new Set(s.orders.map((o) => o.date))].sort(); const n = ds.length;
+      const real = s.orders.filter((o) => !o.adjustment); if (!real.length) return; // adjustments aren't orders
+      const ds = [...new Set(real.map((o) => o.date))].sort(); const n = ds.length;
       const gaps = []; for (let i = 1; i < n; i++) gaps.push(this._days(ds[i - 1], ds[i]));
       const med = gaps.length ? Math.max(this._median(gaps), 7) : null;
       const total = sum(s.orders, (o) => o.cases), last = ds[n - 1], firstD = ds[0];
@@ -114,8 +120,9 @@ const Insights = {
     const everyOrder = DB.pricedOrders();
     const distributors = DB.distributors().map((d) => {
       const mine = everyOrder.filter((o) => o.distributor_id === d.id); if (!mine.length) return { id: d.id, name: d.name, empty: true };
-      const dAsOf = mine.map((o) => o.date).sort().pop();
-      const c = mine.filter((o) => o.date >= curStart && o.date <= asOf), p = hasPrev ? mine.filter((o) => o.date >= prevStart && o.date <= prevEnd) : [];
+      const dAsOf = mine.map((o) => o.date).sort().pop(); // freshness counts every order, even a starting balance
+      const trend_ = mine.filter((o) => !o.ytd_baseline);
+      const c = trend_.filter((o) => o.date >= curStart && o.date <= asOf), p = hasPrev ? trend_.filter((o) => o.date >= prevStart && o.date <= prevEnd) : [];
       return { id: d.id, name: d.name, state: d.state, cases: sum(c, (o) => o.cases), prev: sum(p, (o) => o.cases), stores: new Set(c.map((o) => o.store_id)).size, orders: c.length, avg: c.length ? sum(c, (o) => o.cases) / c.length : 0, last: dAsOf, stale: this._days(dAsOf, todayIso) };
     });
 
@@ -124,7 +131,7 @@ const Insights = {
     const topStores = [...caseByStore.entries()].map(([id, c]) => ({ id, name: (DB.store(id) || {}).name || "—", cases: c })).sort((a, b) => b.cases - a.cases);
     const top3Share = k.cases ? topStores.slice(0, 3).reduce((a, s) => a + s.cases, 0) / k.cases : 0;
 
-    const r = { empty: false, dist, period, days, first, asOf, curStart, hasPrev, staleAccts, k, trend, trendUnit: useMonths ? "month" : "week", flavorByMonth, productMix, accts, watch, gainers, decliners, firstSeen, byState, byCity, distributors, topStores, top3Share, storesEver: byStore.size };
+    const r = { empty: false, baseline, dist, period, days, first, asOf, curStart, hasPrev, staleAccts, k, trend, trendUnit: useMonths ? "month" : "week", flavorByMonth, productMix, accts, watch, gainers, decliners, firstSeen, byState, byCity, distributors, topStores, top3Share, storesEver: byStore.size };
     r.stories = this.stories(r);
     return r;
   },
@@ -171,6 +178,7 @@ const Insights = {
       const up = k.avgOrder > k.prevAvgOrder;
       S.push({ ico: up ? "📦" : "🪶", tone: up ? "good" : "info", title: `Average order ${up ? "growing" : "shrinking"}`, text: `${fc(k.avgOrder)} cases per order vs ${fc(k.prevAvgOrder)} before.` });
     }
+    if (r.baseline) S.push({ ico: "📊", tone: "info", title: `${fc(r.baseline.cases)} cases of year-to-date baseline`, text: `From running-total reports (${r.baseline.stores} stores, as of ${this.fd(r.baseline.asOf)}). They're in your totals but not in these trends, because the report doesn't say when each case sold. Trends build from the next report on.` });
     r.distributors.filter((d) => !d.empty && d.stale > 35).forEach((d) => S.push({ ico: "📅", tone: "warn", title: `${d.name}'s data is ${d.stale} days old`, text: `Latest order on file is ${this.fd(d.last)}. Upload their newest report so these numbers stay current.`, go: "import" }));
     return S;
   },

@@ -56,6 +56,15 @@
 .chip--check { background: #fff3c4; }
 .chip--review { background: #ffd9c9; }
 
+/* ---------- layout toggles + info notes ---------- */
+.imp-layout { display: flex; flex-direction: column; gap: 9px; background: #fff; border: 2px solid var(--line); border-radius: var(--radius-sm); padding: 12px 14px; margin: 4px 0 14px; font-size: 14px; }
+.imp-layout label { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; line-height: 1.4; }
+.imp-layout input { width: auto; margin-top: 3px; flex: none; }
+.imp-auto { font-style: normal; font-family: var(--font-ui); font-size: 11px; color: var(--ok); white-space: nowrap; }
+.imp-note { display: flex; gap: 12px; align-items: flex-start; background: var(--sky-pale); border: 2px solid var(--sky); border-radius: var(--radius-sm); padding: 12px 14px; margin: 0 0 12px; font-size: 14px; line-height: 1.5; }
+.imp-note > :first-child { font-size: 20px; line-height: 1.2; }
+.imp-note--warn { background: #fff8c9; border-color: var(--yellow-deep); }
+
 /* ---------- done ---------- */
 .imp-done { text-align: center; padding: 28px 20px; background: linear-gradient(160deg, var(--teal-pale), var(--sky-pale)); }
 .imp-done__ico { font-size: 44px; }

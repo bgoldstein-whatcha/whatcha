@@ -518,7 +518,8 @@ const DB = {
 
     // by month (revenue + cases)
     const monthMap = {}, monthCaseMap = {};
-    ords.forEach((o) => { const m = o.date.slice(0, 7); monthMap[m] = (monthMap[m] || 0) + o.total; monthCaseMap[m] = (monthCaseMap[m] || 0) + o.cases; });
+    // (A running-total "starting balance" has no real dates — keep it out of the month-by-month charts; it's still in the totals.)
+    ords.forEach((o) => { if (o.ytd_baseline) return; const m = o.date.slice(0, 7); monthMap[m] = (monthMap[m] || 0) + o.total; monthCaseMap[m] = (monthCaseMap[m] || 0) + o.cases; });
     const byMonth = Object.keys(monthMap).sort().map((m) => ({ label: m, value: monthMap[m] }));
     const casesByMonth = Object.keys(monthCaseMap).sort().map((m) => ({ label: m, value: monthCaseMap[m] }));
 

@@ -258,7 +258,7 @@ const App = {
           ${ords.map((o) => `
             <tr class="clickable" onclick="App.orderModal('${o.id}')">
               <td>${fmtDate(o.date)}</td>
-              <td>${esc(o.store_name)}${o.hasMissing ? ' <span class="chip chip--sm" style="background:#ffe0e0">no price</span>' : ""}${o.source === "import" ? ' <span class="chip chip--sm chip--exported" title="From a distributor report">📥 report</span>' : o.confirmed_date ? ' <span class="chip chip--sm chip--active" title="Confirmed by a distributor report">✓ confirmed</span>' : ""}</td>
+              <td>${esc(o.store_name)}${o.hasMissing ? ' <span class="chip chip--sm" style="background:#ffe0e0">no price</span>' : ""}${o.ytd_baseline ? ' <span class="chip chip--sm chip--lead" title="Year-to-date starting balance from a running-total report — the report doesn\'t say when each case sold">📊 YTD balance</span>' : o.adjustment ? ' <span class="chip chip--sm chip--inactive" title="The distributor\'s running total went down">↩ adjustment</span>' : o.source === "import" ? ' <span class="chip chip--sm chip--exported" title="From a distributor report">📥 report</span>' : o.confirmed_date ? ' <span class="chip chip--sm chip--active" title="Confirmed by a distributor report">✓ confirmed</span>' : ""}</td>
               <td><span class="chip chip--sm">${o.state}</span></td>
               <td class="num mono">${cs(o.cases)}</td>
               <td class="num mono">${fmtMoney2(o.total)}</td>

@@ -21,6 +21,7 @@
   const fresh = () => ({
     step: 1, distId: "", fileName: "", fileSize: 0, sheets: [], sheetIdx: 0, headerRow: 0, headers: [], sample: [],
     mapping: {}, units: "cases", wide: false, wideCols: {}, single: "", fallbackDate: "", savedProducts: null,
+    hier: false, cumulative: false, cumYear: null, hints: null,
     parsed: null, productTexts: [], productMap: {}, options: { createNew: true, publishNew: true, reconcile: true },
     overrides: {}, plan: null, result: null, busy: "", error: "",
   });
@@ -45,8 +46,15 @@
       const sheets = await Importer.readFile(file);
       const keepDist = S.distId; S = fresh(); S.distId = keepDist;
       S.fileName = file.name; S.fileSize = file.size; S.sheets = sheets; S.sheetIdx = bestSheet(sheets);
+      // Which distributor sent this? Recognized from a layout you've imported before, or from the file name.
+      const sh0 = sheets[S.sheetIdx], hr0 = Importer.detectHeaderRow(sh0.rows);
+      const guess = Importer.detectDistributor((sh0.rows[hr0] || []).map(cellText), file.name);
+      if (guess) S.distId = guess.dist.id;
+      S.detected = guess ? `Recognized as ${guess.dist.name} (from the ${guess.why})` : "";
       analyze({ redetect: true });
-      S.step = 2;
+      // A layout you've already approved needs no column-checking — go straight to the review.
+      if (S.usedSaved && !issues().length && productsKnown()) { buildPlan(); S.step = 3; S.quick = true; }
+      else S.step = 2;
     } catch (e) { S.error = (e && e.message) || String(e); S.busy = ""; if (!S.sheets.length) S.step = 1; }
     S.busy = ""; renderImport();
   }
@@ -60,15 +68,35 @@
     if (saved) { S.mapping = saved.mapping; S.units = saved.units; S.savedProducts = saved.productMap; S.usedSaved = true; }
     else { const g = Importer.guessMapping(S.headers, S.sample); S.mapping = g.mapping; S.units = g.units; S.savedProducts = null; S.usedSaved = false; }
     S.wide = false; S.wideCols = {}; S.single = ""; S.productMap = {};
-    if (S.mapping.product < 0 && S.mapping.sku < 0) {
-      const w = Importer.guessWide(S.headers, DB.products());
+    const prods = DB.products(), dataRows = rows.slice(S.headerRow + 1);
+
+    // One column holding customer names AND the products listed under them?
+    S.hier = saved ? !!saved.hier : Importer.detectHierarchy(S.headers, S.mapping, dataRows, prods);
+    if (S.hier) { S.mapping.product = -1; S.mapping.sku = -1; }
+    else if (S.mapping.product < 0 && S.mapping.sku < 0) {
+      const w = Importer.guessWide(S.headers, prods);
       if (Object.keys(w).length) { S.wide = true; S.wideCols = w; }
     }
+
+    // Do the numbers cover a whole year so far (running totals) rather than individual orders?
+    const qh = S.mapping.qty >= 0 ? S.headers[S.mapping.qty] : "";
+    S.hints = Importer.metaHints(S.sheets, S.fileName, qh);
+    const undated = S.mapping.date < 0;
+    S.cumulative = undated && (saved ? !!saved.cumulative : (S.hints.ytd || /\b20\d\d\b/.test(qh)));
+    S.cumYear = S.hints.year || new Date().getFullYear();
+    if (S.hints.asOf) S.fallbackDate = S.hints.asOf; // "through" date for running totals / the date for undated rows
+    // Rolling reports ("New Placement – 90 Day") can re-list the same stores week after week.
+    S.options.skipRepeats = saved ? !!saved.skipRepeats : /\b(\d+\s*-?\s*days?|rolling|placements?)\b/i.test(S.fileName);
     reparse();
+  }
+  // Every product line in the file is either recognized or explicitly mapped before (so nothing is silently dropped).
+  function productsKnown() {
+    if (S.wide || !S.productTexts.length) return true;
+    return S.productTexts.every((t) => (S.savedProducts && S.savedProducts[t] !== undefined) || Importer.guessProduct(t, DB.products()) !== "ignore");
   }
   function reparse() {
     const rows = S.sheets[S.sheetIdx].rows;
-    S.parsed = Importer.parseRows(rows, { headerRow: S.headerRow, mapping: S.mapping, wideCols: S.wide ? S.wideCols : null, singleProduct: S.single });
+    S.parsed = Importer.parseRows(rows, { headerRow: S.headerRow, mapping: S.mapping, wideCols: S.wide ? S.wideCols : null, singleProduct: S.single, hierarchy: S.hier, products: DB.products() });
     const prods = DB.products();
     S.productTexts = [...S.parsed.productTexts.entries()].sort((a, b) => b[1] - a[1]).map(([t]) => t);
     S.productTexts.forEach((t) => { if (S.productMap[t] === undefined) S.productMap[t] = (S.savedProducts && S.savedProducts[t]) || Importer.guessProduct(t, prods); });
@@ -78,13 +106,15 @@
     const m = S.mapping, out = [];
     if (m.store < 0) out.push("Choose the column that has the store / customer names.");
     if (S.wide ? !Object.keys(S.wideCols).length : m.qty < 0) out.push(S.wide ? "Choose a column for at least one flavor." : "Choose the column that has the quantity.");
-    if (!S.wide && m.product < 0 && m.sku < 0 && !S.single) out.push("Tell me which product this report is for (or pick the product column).");
-    if (m.date < 0 && !S.fallbackDate) out.push("This report has no date column — enter the date it covers.");
+    if (!S.wide && !S.hier && m.product < 0 && m.sku < 0 && !S.single) out.push("Tell me which product this report is for (or pick the product column).");
+    if (S.cumulative && !(+S.cumYear >= 2015)) out.push("Enter the year these running totals cover.");
+    if ((m.date < 0 || S.cumulative) && !S.fallbackDate) out.push(S.cumulative ? "Enter the date this report is current through." : "This report has no date column — enter the date it covers.");
     if (S.parsed && !S.parsed.rows.length && !out.length) out.push("I couldn't read any sales rows with these settings — check the header row and columns.");
     return out;
   }
   function buildPlan() {
-    S.plan = Importer.buildPlan({ rows: S.parsed.rows, distributor: dist(), productMap: S.productMap, units: S.units, fallbackDate: S.fallbackDate, options: S.options, overrides: S.overrides });
+    S.plan = Importer.buildPlan({ rows: S.parsed.rows, distributor: dist(), productMap: S.productMap, units: S.units, fallbackDate: S.fallbackDate, options: S.options, overrides: S.overrides,
+      cumulative: S.cumulative ? { year: +S.cumYear, asOf: S.fallbackDate } : null, undated: S.mapping.date < 0 && !S.cumulative });
   }
   async function commit() {
     const p = S.plan; if (!p) return;
@@ -93,7 +123,7 @@
       const entry = await Importer.apply(p, { fileName: S.fileName });
       const fieldHeaders = {}; Importer.FIELDS.forEach((f) => { fieldHeaders[f.key] = S.mapping[f.key] >= 0 ? Importer._norm(S.headers[S.mapping[f.key]]) : ""; });
       const prevSaved = ((DB.kvGet("import_maps", {}) || {})[S.distId] || {}).productMap || {};
-      Importer.saveMapping(S.distId, { fieldHeaders, units: S.units, productMap: { ...prevSaved, ...S.productMap }, at: new Date().toISOString() });
+      Importer.saveMapping(S.distId, { fieldHeaders, units: S.units, productMap: { ...prevSaved, ...S.productMap }, hier: S.hier, cumulative: S.cumulative, skipRepeats: !!S.options.skipRepeats, at: new Date().toISOString() });
       S.result = entry; S.step = 4;
     } catch (e) { S.error = "Something went wrong while saving: " + ((e && e.message) || e) + " — re-uploading the same file is safe; it won't double-count."; }
     S.busy = ""; renderImport();
@@ -137,7 +167,7 @@
     return `<div class="panel">
       <div class="imp-uprow">
         <div class="field" style="margin:0;min-width:240px"><label>Which distributor is this report from?</label>
-          <select onchange="App.impSetDist(this.value)">${dists.map((d) => `<option value="${d.id}" ${S.distId === d.id ? "selected" : ""}>${E(d.name)} (${d.state})</option>`).join("")}</select></div>
+          <select onchange="App.impSetDist(this.value)">${dists.map((d) => `<option value="${d.id}" ${S.distId === d.id ? "selected" : ""}>${E(d.name)} (${d.state})</option>`).join("")}</select>${S.detected ? `<div class="hint" style="color:var(--ok)">✓ ${E(S.detected)}</div>` : ""}</div>
         ${loaded ? `<div class="imp-file"><span class="imp-file__ico">📄</span><div><strong>${E(S.fileName)}</strong><div class="muted" style="font-size:12px">${S.parsed ? S.parsed.rows.length + " sales rows read" : ""}${S.sheets.length > 1 ? " · sheet “" + E(S.sheets[S.sheetIdx].name) + "”" : ""}</div></div>
           <label class="btn btn--ghost btn--sm" for="imp-file2">Use a different file</label><input id="imp-file2" type="file" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm" hidden></div>` : ""}
       </div>
@@ -148,10 +178,12 @@
 
   function mapPanel() {
     const m = S.mapping, p = S.parsed, sk = p.skipped, prods = DB.products();
-    const fields = Importer.FIELDS.filter((f) => !(S.wide && ["qty", "product", "sku", "uom"].includes(f.key)));
-    const rows = fields.map((f) => `<tr><td><strong>${E(f.label)}</strong>${f.req ? ' <span class="imp-req">needed</span>' : ""}</td><td>${colSelect(f.key)}</td><td class="muted imp-sample">${m[f.key] >= 0 ? E(sampleOf(m[f.key])) : ""}</td></tr>`).join("");
+    const hide = S.wide ? ["qty", "product", "sku", "uom"] : S.hier ? ["product", "sku"] : [];
+    const fields = Importer.FIELDS.filter((f) => !hide.includes(f.key));
+    const lbl = (f) => (f.key === "store" && S.hier ? "Customer & product names (same column)" : f.key === "qty" && S.cumulative ? "Cases (running total)" : f.label);
+    const rows = fields.map((f) => `<tr><td><strong>${E(lbl(f))}</strong>${f.req ? ' <span class="imp-req">needed</span>' : ""}</td><td>${colSelect(f.key)}</td><td class="muted imp-sample">${m[f.key] >= 0 ? E(sampleOf(m[f.key])) : ""}</td></tr>`).join("");
     const wideRows = S.wide ? prods.map((pr) => `<tr><td><strong>${E(pr.name.replace("Spiked ", ""))}</strong> <span class="imp-req">cases column</span></td><td><select onchange="App.impSetWideCol('${pr.id}', this.value)"><option value="-1">— none —</option>${S.headers.map((hh, i) => `<option value="${i}" ${S.wideCols[pr.id] === i ? "selected" : ""}>${E(hh || "Column " + (i + 1))}</option>`).join("")}</select></td><td class="muted imp-sample">${S.wideCols[pr.id] >= 0 ? E(sampleOf(S.wideCols[pr.id])) : ""}</td></tr>`).join("") : "";
-    const needProduct = !S.wide && m.product < 0 && m.sku < 0;
+    const needProduct = !S.wide && !S.hier && m.product < 0 && m.sku < 0;
     const prodTable = !S.wide && !needProduct && S.productTexts.length ? `<div class="section-title" style="margin-top:20px">Which of these products are Whatcha?</div>
       <div class="table-wrap"><table class="data" style="min-width:auto"><thead><tr><th class="no-sort">Product in the report</th><th class="no-sort num">Rows</th><th class="no-sort">Count it as</th></tr></thead><tbody>
       ${S.productTexts.slice(0, 60).map((t, i) => `<tr><td>${E(t)}</td><td class="num mono">${p.productTexts.get(t)}</td><td>${prodSelect(S.productMap[t], `App.impSetProduct(${i}, this.value)`)}</td></tr>`).join("")}</tbody></table></div>
@@ -170,9 +202,14 @@
         ${S.sheets.length > 1 ? `<div class="field"><label>Sheet</label><select onchange="App.impSetSheet(this.value)">${S.sheets.map((sh, i) => `<option value="${i}" ${i === S.sheetIdx ? "selected" : ""}>${E(sh.name)} (${sh.rows.length} rows)</option>`).join("")}</select></div>` : ""}
         <div class="field"><label>Header row <span class="muted" style="font-weight:normal">(the row with column names)</span></label><input type="number" min="1" value="${S.headerRow + 1}" style="width:90px" onchange="App.impSetHeader(this.value)"></div>
         <div class="field"><label>Quantity is counted in</label><select onchange="App.impSetUnits(this.value)"><option value="cases" ${S.units === "cases" ? "selected" : ""}>Cases</option><option value="units" ${S.units === "units" ? "selected" : ""}>Individual pouches (÷ ${prods[0] ? prods[0].units_per_case : 24} per case)</option></select></div>
-        <div class="field"><label>${m.date < 0 ? "Date this report covers" : "Date for rows that don’t have one"}</label><input type="date" value="${S.fallbackDate}" onchange="App.impSetFallback(this.value)"></div>
+        <div class="field"><label>${S.cumulative ? "Report is current through" : m.date < 0 ? "Date this report covers" : "Date for rows that don’t have one"}</label><input type="date" value="${S.fallbackDate}" onchange="App.impSetFallback(this.value)">${S.hints && S.hints.asOf && S.fallbackDate === S.hints.asOf ? `<div class="hint">taken from ${E(S.hints.asOfSource)}</div>` : ""}</div>
+        ${S.cumulative ? `<div class="field"><label>Running totals for the year</label><input type="number" min="2015" max="2100" value="${S.cumYear || ""}" style="width:100px" onchange="App.impSetCumYear(this.value)"></div>` : ""}
       </div>
-      <div class="field" style="margin:4px 0 12px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" style="width:auto" ${S.wide ? "checked" : ""} onchange="App.impSetWide(this.checked)"> Each flavor has its own column (instead of one product column)</label></div>
+      <div class="imp-layout">
+        <label><input type="checkbox" ${S.hier ? "checked" : ""} onchange="App.impSetHier(this.checked)"><span><strong>Customers and products share one column</strong> — each customer’s name has its products listed underneath it${S.hier && !S.usedSaved ? ' <em class="imp-auto">✓ detected</em>' : ""}</span></label>
+        <label><input type="checkbox" ${S.wide ? "checked" : ""} onchange="App.impSetWide(this.checked)"><span>Each flavor has its own column (instead of one product column)</span></label>
+        <label><input type="checkbox" ${S.cumulative ? "checked" : ""} onchange="App.impSetCumulative(this.checked)"><span><strong>These are running totals for the year so far</strong>, not individual orders — I’ll only add what’s new since your last report${S.cumulative && S.hints && S.hints.ytd && !S.usedSaved ? ' <em class="imp-auto">✓ the file says “Year to Date”</em>' : ""}</span></label>
+      </div>
       <div class="table-wrap"><table class="data imp-map" style="min-width:auto"><thead><tr><th class="no-sort">What I need</th><th class="no-sort">Column in your file</th><th class="no-sort">Example values</th></tr></thead><tbody>${rows}${wideRows}</tbody></table></div>
       ${needProduct ? `<div class="field" style="margin-top:14px"><label>Every row in this report is for:</label>${`<select onchange="App.impSetSingle(this.value)"><option value="">— choose a product —</option>${prods.map((pr) => `<option value="${pr.id}" ${S.single === pr.id ? "selected" : ""}>${E(pr.name)}</option>`).join("")}</select>`}</div>` : ""}
       ${prodTable}
@@ -185,10 +222,12 @@
   }
 
   /* ---------- step 3: exactly what will happen ---------- */
-  const confChip = (rs) => ({ sure: '<span class="chip chip--sm chip--sure">✓ matched</span>', check: '<span class="chip chip--sm chip--check">≈ likely match</span>', review: '<span class="chip chip--sm chip--review">? possible match</span>', new: '<span class="chip chip--sm chip--new">＋ new store</span>' }[rs.confidence]);
+  const confChip = (rs) => rs.autoSkip && !S.overrides[rs.key] ? '<span class="chip chip--sm chip--inactive">⛔ skipped</span>' : rs.noActivity ? '<span class="chip chip--sm chip--inactive">no cases</span>' : ({ sure: '<span class="chip chip--sm chip--sure">✓ matched</span>', check: '<span class="chip chip--sm chip--check">≈ likely match</span>', review: '<span class="chip chip--sm chip--review">? possible match</span>', new: '<span class="chip chip--sm chip--new">＋ new store</span>' }[rs.confidence]);
   function matchSelect(rs, i) {
     const cur = S.overrides[rs.key] || "auto";
-    const autoLabel = rs.decision === "match" && cur === "auto" ? "✓ " + rs.store.name : rs.decision === "skip" && cur === "auto" ? "⛔ Skipped" : "＋ Create new account";
+    const autoLabel = rs.decision === "match" && cur === "auto" ? "✓ " + rs.store.name
+      : rs.noActivity && cur === "auto" ? "— nothing to import (0 cases)"
+      : rs.decision === "skip" && cur === "auto" ? "⛔ Skipped" + (rs.autoSkip ? " — " + rs.autoSkip : "") : "＋ Create new account";
     const autoId = rs.decision === "match" && cur === "auto" ? rs.store.id : null;
     const cands = rs.match.candidates.filter((c) => c.store.id !== autoId).map((c) => `<option value="${c.store.id}" ${cur === c.store.id ? "selected" : ""}>Match: ${E(c.store.name)}${c.store.city ? " — " + E(c.store.city) : ""}</option>`).join("");
     return `<select class="imp-match" onchange="App.impSetOverride(${i}, this.value)"><option value="auto" ${cur === "auto" ? "selected" : ""}>${E(autoLabel)}</option>${cands}<option value="new" ${cur === "new" ? "selected" : ""}>＋ Create new account</option><option value="skip" ${cur === "skip" ? "selected" : ""}>⛔ Skip this store</option></select>`;
@@ -198,12 +237,17 @@
     const t = p.totals, c = p.counts, st = p.stats, O = p.options;
     const nothing = !t.orders && !p.storeUpdates.length && !p.orderUpdates.length && !p.newStores.length;
     const tile = (cls, label, val, sub) => `<div class="kpi ${cls || ""}"><div class="kpi__label">${label}</div><div class="kpi__value">${val}</div><div class="kpi__sub">${sub || ""}</div></div>`;
+    const cu = p.cumulative;
     const tiles = [
-      tile("kpi--accent", "New orders", t.orders, `${fc(t.newCases)} ${plural(t.newCases, "case", "cases")}${t.range ? " · " + fd(t.range[0]) + " – " + fd(t.range[1]) : ""}`),
-      tile("kpi--teal", "New accounts", t.newAccounts, t.newAccountsNoMap ? `${t.newAccountsNoMap} without a street address won’t show on the public map yet` : "added as active stores"),
+      cu ? tile("kpi--accent", cu.baseline ? "Starting balance" : "New since last report", `${fc(t.newCases)} <span style="font-size:16px">cases</span>`, `${t.orders} ${plural(t.orders, "record", "records")} · as of ${fd(cu.asOf)}`)
+         : tile("kpi--accent", "New orders", t.orders, `${fc(t.newCases)} ${plural(t.newCases, "case", "cases")}${t.range ? " · " + fd(t.range[0]) + " – " + fd(t.range[1]) : ""}`),
+      tile("kpi--teal", "New accounts", t.newAccounts, t.newAccountsNoAddr ? `${t.newAccountsNoAddr} have no street address or city yet — add them in Accounts (they stay off the public map until you do)` : t.newAccountsNoMap ? `${t.newAccountsNoMap} left off the public map` : "added as active stores"),
       tile("kpi--coral", "Accounts updated", t.activated + t.filled, `${t.activated} marked active · ${t.filled} missing details filled in`),
       c.reconciled ? tile("", "Matched to your orders", c.reconciled, "confirmed — not counted twice") : "",
-      c.duplicates ? tile("", "Already imported", c.duplicates, "lines I’ve seen before — skipped") : "",
+      cu && cu.alreadyCounted ? tile("", "Already on your books", fc(cu.alreadyCounted), "cases you’d logged by hand — counted once") : "",
+      c.adjustments ? tile("", "Adjustments", c.adjustments, "totals that went down since last time") : "",
+      c.repeats ? tile("", "Repeats skipped", c.repeats, "same store, product & quantity as an earlier report") : "",
+      c.duplicates ? tile("", "Already imported", c.duplicates, cu ? "totals unchanged since last report" : "lines I’ve seen before — skipped") : "",
       c.changed ? tile("", "Corrections", c.changed, "quantities changed since last time") : "",
       p.leadWins.length ? tile("", "Leads won 🎉", p.leadWins.length, "now accounts") : "",
     ].join("");
@@ -215,10 +259,16 @@
     return `<div class="panel">
       <div class="panel__head"><h3>3 · Review — nothing is saved until you confirm</h3></div>
       <div class="kpi-grid imp-kpis">${tiles}</div>
+      ${cu ? `<div class="imp-note">📊 <div><strong>Running totals through ${fd(cu.asOf)}.</strong> ${cu.baseline
+        ? `This is the first year-to-date report I’ve seen for ${E(p.distributor.name)}, so I’ll record these ${fc(t.baselineCases)} cases as a <strong>starting balance</strong> dated ${fd(cu.asOf)}. The report doesn’t say <em>when</em> in ${cu.year} each case sold, so the balance won’t distort your trends. From the next report on, I’ll add only what’s new.`
+        : `I compared every total with what you already have for ${cu.year} and added only the difference.`}${cu.alreadyCounted ? ` ${fc(cu.alreadyCounted)} cases you’d already logged by hand count toward these totals — they aren’t added twice.` : ""}</div></div>` : ""}
+      ${p.warnings && p.warnings.missingPricing.length ? `<div class="imp-note imp-note--warn">💲 <div><strong>No case price set for ${p.warnings.missingPricing.map(E).join(", ")}.</strong> Revenue for ${plural(p.warnings.missingPricing.length, "that state", "those states")} will be estimated from another state’s price until you add it in <a href="#pricing" onclick="App.go('pricing');return false">Pricing</a>. Case counts aren’t affected.</div></div>` : ""}
+      ${p.repeatLines && p.repeatLines.length && !O.skipRepeats ? `<div class="imp-note imp-note--warn">🔁 <div><strong>${p.repeatLines.length} ${plural(p.repeatLines.length, "line looks", "lines look")} like ${plural(p.repeatLines.length, "a repeat", "repeats")} of an earlier report</strong> (same store, product and quantity within 90 days). If this report overlaps the last one, those would be counted twice — tick “Skip repeats” below.</div></div>` : ""}
       <div class="imp-optrow">
         <label><input type="checkbox" ${O.createNew ? "checked" : ""} onchange="App.impSetOpt('createNew', this.checked)"> Add stores I don’t have yet as new active accounts</label>
         <label><input type="checkbox" ${O.publishNew ? "checked" : ""} onchange="App.impSetOpt('publishNew', this.checked)"> Show new stores that have a full address on the public map</label>
-        <label><input type="checkbox" ${O.reconcile ? "checked" : ""} onchange="App.impSetOpt('reconcile', this.checked)"> Match against orders I logged by hand (so they’re not counted twice)</label>
+        ${cu ? "" : `<label><input type="checkbox" ${O.reconcile ? "checked" : ""} onchange="App.impSetOpt('reconcile', this.checked)"> Match against orders I logged by hand (so they’re not counted twice)</label>`}
+        ${p.undated && !cu ? `<label><input type="checkbox" ${O.skipRepeats ? "checked" : ""} onchange="App.impSetOpt('skipRepeats', this.checked)"> <span><strong>Skip repeats</strong> — ignore a store/product/quantity that matches an earlier report within 90 days <span class="muted">(use for rolling “last 90 days” reports that re-list the same stores)</span></span></label>` : ""}
       </div>
       ${needs.length ? `<div class="section-title">Take a look at these (${needs.length})</div>${storeTable(needs)}` : ""}
       ${sure.length ? `<details class="imp-sure"><summary>${sure.length} ${plural(sure.length, "store", "stores")} matched to your accounts automatically</summary>${storeTable(sure)}</details>` : ""}
@@ -226,7 +276,7 @@
       ${p.changedLines.length ? `<div class="section-title">Corrections to earlier imports</div><div class="table-wrap"><table class="data" style="min-width:auto"><tbody>${p.changedLines.slice(0, 20).map((r) => `<tr><td>${E(Importer.tidyName(r.store))}</td><td>${fd(r.date)}</td><td>${fc(r.from)} → <strong>${fc(r.to)}</strong> cases</td></tr>`).join("")}</tbody></table></div>` : ""}
       ${p.leadWins.length ? `<div class="section-title">Leads that just became accounts 🎉</div><p style="margin:4px 0">${p.leadWins.map((w) => E(w.leadName)).join(", ")} — I’ll mark ${plural(p.leadWins.length, "it", "them")} as won.</p>` : ""}
       ${skipBits.length ? `<p class="muted" style="font-size:12px;margin:12px 2px 0">Also in the file but not counted: ${skipBits.join(" · ")}.</p>` : ""}
-      <div class="imp-actions"><button class="btn btn--ghost" onclick="App.impBack()">← Back</button>
+      <div class="imp-actions"><button class="btn btn--ghost" onclick="App.impBack()">${S.quick ? "Change how I read the columns" : "← Back"}</button>
         ${nothing ? '<div class="imp-problems" style="color:var(--ok)">✓ Everything in this report is already in your dashboard — nothing new to add.</div>' : ""}
         <button class="btn btn--coral" ${nothing ? "disabled" : ""} onclick="App.impCommit()">✓ Import ${t.orders} ${plural(t.orders, "order", "orders")}${t.newAccounts ? " + " + t.newAccounts + " new " + plural(t.newAccounts, "account", "accounts") : ""}</button></div>
     </div>`;
@@ -249,7 +299,7 @@
     if (!log.length) return "";
     return `<div class="panel"><div class="panel__head"><h3>Import history</h3></div><div class="table-wrap"><table class="data" style="min-width:560px"><thead><tr><th class="no-sort">When</th><th class="no-sort">File</th><th class="no-sort">Distributor</th><th class="no-sort">What changed</th><th class="no-sort"></th></tr></thead><tbody>
       ${log.map((e) => `<tr><td>${new Date(e.at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}<div class="muted" style="font-size:12px">${ago(e.at)}</div></td><td>${E(e.fileName)}${e.range ? `<div class="muted" style="font-size:12px">${fd(e.range[0])} – ${fd(e.range[1])}</div>` : ""}</td><td>${E(e.distributor_name || "")}</td>
-      <td style="font-size:13px">${e.orders} ${plural(e.orders, "order", "orders")} · ${fc(e.cases)} cases${e.newStores ? " · " + e.newStores + " new " + plural(e.newStores, "account", "accounts") : ""}${e.duplicates ? ' <span class="muted">· ' + e.duplicates + " already had</span>" : ""}</td>
+      <td style="font-size:13px">${e.ytd ? '<span class="chip chip--sm chip--lead">YTD totals</span> ' : ""}${e.orders} ${plural(e.orders, "order", "orders")} · ${fc(e.cases)} cases${e.ytd && e.ytd.baseline ? " (starting balance)" : ""}${e.newStores ? " · " + e.newStores + " new " + plural(e.newStores, "account", "accounts") : ""}${e.duplicates ? ' <span class="muted">· ' + e.duplicates + " already had</span>" : ""}</td>
       <td class="right"><button class="btn btn--ghost btn--sm" onclick="App.impUndo('${e.id}')">Undo</button></td></tr>`).join("")}</tbody></table></div></div>`;
   }
 
@@ -271,7 +321,10 @@
     impSetHeader(n) { S.headerRow = Math.max(0, (+n || 1) - 1); analyze({ redetect: false }); renderImport(); },
     impSetUnits(u) { S.units = u; S.plan = null; renderImport(); },
     impSetFallback(d) { S.fallbackDate = d; S.plan = null; renderImport(); },
-    impSetWide(on) { S.wide = !!on; S.wideCols = on ? Importer.guessWide(S.headers, DB.products()) : {}; if (on) { S.mapping.product = -1; S.mapping.sku = -1; } reparse(); renderImport(); },
+    impSetWide(on) { S.wide = !!on; S.wideCols = on ? Importer.guessWide(S.headers, DB.products()) : {}; if (on) { S.mapping.product = -1; S.mapping.sku = -1; S.hier = false; } reparse(); renderImport(); },
+    impSetHier(on) { S.hier = !!on; if (on) { S.mapping.product = -1; S.mapping.sku = -1; S.wide = false; S.wideCols = {}; } reparse(); renderImport(); },
+    impSetCumulative(on) { S.cumulative = !!on; if (on && !S.cumYear) S.cumYear = (S.hints && S.hints.year) || new Date().getFullYear(); S.plan = null; renderImport(); },
+    impSetCumYear(y) { S.cumYear = +y || ""; S.plan = null; renderImport(); },
     impSetWideCol(pid, i) { if (+i >= 0) S.wideCols[pid] = +i; else delete S.wideCols[pid]; reparse(); renderImport(); },
     impSetSingle(pid) { S.single = pid; reparse(); renderImport(); },
     impSetProduct(i, v) { S.productMap[S.productTexts[i]] = v; S.plan = null; renderImport(); },
@@ -304,7 +357,10 @@
     const filters = `<div class="ins-filters"><div class="pill-filter" style="margin:0">${Insights.PERIODS.map(([k, l]) => `<button class="${IS.period === k ? "active" : ""}" onclick="App.insSet('period','${k}')">${l}</button>`).join("")}</div>
       ${dists.length > 1 ? `<select onchange="App.insSet('dist', this.value)"><option value="all">All distributors</option>${dists.map((d) => `<option value="${d.id}" ${IS.dist === d.id ? "selected" : ""}>${E(d.name)}</option>`).join("")}</select>` : ""}</div>`;
     if (r.empty) {
-      v.innerHTML = `${filters}<div class="panel"><div class="empty-state"><div class="big">💡</div>No orders yet — insights appear as soon as there’s sales data.<div style="margin-top:12px"><button class="btn btn--primary" onclick="App.go('import')">📥 Import a distributor report</button></div></div></div>`; return;
+      const msg = r.baseline
+        ? `<strong>Your starting balance is in: ${fc(r.baseline.cases)} cases across ${r.baseline.stores} stores</strong> (year-to-date through ${fd(r.baseline.asOf)}).<br>Trends, reorder timing and movers begin with your <em>next</em> report — each new report adds only what changed since the last one, so there’s something to compare.`
+        : "No orders yet — insights appear as soon as there’s sales data.";
+      v.innerHTML = `${filters}<div class="panel"><div class="empty-state"><div class="big">💡</div>${msg}<div style="margin-top:12px"><button class="btn btn--primary" onclick="App.go('import')">📥 Import a distributor report</button></div></div></div>`; return;
     }
     const k = r.k;
     const kpi = (cls, label, val, sub) => `<div class="kpi ${cls}"><div class="kpi__label">${label}</div><div class="kpi__value">${val}</div><div class="kpi__sub">${sub}</div></div>`;

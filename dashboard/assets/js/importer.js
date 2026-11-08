@@ -24,6 +24,13 @@ const Importer = {
   ABBR: { mkt: "market", mrkt: "market", pkg: "package", pkge: "package", pkgs: "package", bev: "beverage", liq: "liquor", liqs: "liquor", lqr: "liquor", ws: "wine", wn: "wine", sp: "spirit" },
 
   _stateMap: null,
+  // US state from a ZIP code's first three digits (for reports that have a ZIP but no state column).
+  ZIP3: [[10, 27, "MA"], [28, 29, "RI"], [30, 38, "NH"], [39, 49, "ME"], [50, 54, "VT"], [56, 59, "VT"], [60, 69, "CT"], [70, 89, "NJ"], [100, 149, "NY"], [150, 196, "PA"], [197, 199, "DE"], [200, 205, "DC"], [206, 212, "MD"], [214, 219, "MD"], [220, 246, "VA"], [247, 268, "WV"], [270, 289, "NC"], [290, 299, "SC"], [300, 319, "GA"], [398, 399, "GA"], [320, 339, "FL"], [341, 341, "FL"], [344, 344, "FL"], [346, 347, "FL"], [349, 349, "FL"], [350, 369, "AL"], [370, 385, "TN"], [386, 397, "MS"], [400, 427, "KY"], [430, 459, "OH"], [460, 479, "IN"], [480, 499, "MI"], [500, 528, "IA"], [530, 549, "WI"], [550, 567, "MN"], [570, 577, "SD"], [580, 588, "ND"], [590, 599, "MT"], [600, 629, "IL"], [630, 658, "MO"], [660, 679, "KS"], [680, 693, "NE"], [700, 714, "LA"], [716, 729, "AR"], [730, 749, "OK"], [750, 799, "TX"], [800, 816, "CO"], [820, 831, "WY"], [832, 838, "ID"], [840, 847, "UT"], [850, 865, "AZ"], [870, 884, "NM"], [889, 898, "NV"], [900, 961, "CA"], [967, 968, "HI"], [970, 979, "OR"], [980, 994, "WA"], [995, 999, "AK"]],
+  stateFromZip(zip) {
+    const z = String(zip || "").replace(/\D/g, ""); if (z.length < 3) return "";
+    const p = +(z.length === 4 ? "0" + z : z).slice(0, 3);
+    const hit = this.ZIP3.find(([lo, hi]) => p >= lo && p <= hi); return hit ? hit[2] : "";
+  },
   stateCode(v) {
     const s = String(v == null ? "" : v).trim(); if (!s) return "";
     if (/^[A-Za-z]{2}$/.test(s)) return s.toUpperCase();
@@ -102,6 +109,8 @@ const Importer = {
     let first = true;
     return String(s).toLowerCase().split(/(\s+)/).map((p) => {
       if (/^\s+$/.test(p) || !p) return p;
+      // "A2Z", "7UP", "24PK" stay upper; ordinals ("7th") stay lower
+      if (/\d/.test(p) && /[a-z]/.test(p)) { first = false; return /^\d+(st|nd|rd|th)$/.test(p) ? p : p.toUpperCase(); }
       const bare = p.replace(/[^a-z]/g, "");
       if (keep[bare]) { first = false; return p.replace(bare, keep[bare]); }
       if (!first && small.has(bare)) return p;
@@ -112,11 +121,14 @@ const Importer = {
   // Tidy a distributor-style store name: strip LLC/INC, de-shout ALL CAPS.
   tidyName(s) {
     let t = String(s || "").replace(/\s+/g, " ").trim();
+    t = t.replace(/\s-(?=\S)/g, " - ").replace(/(\S)-\s/g, "$1 - "); // "WINE ANTHOLOGY -SCOTCH PLAINS" → "… - …"
     t = t.replace(/[,\s]+(llc|l\.l\.c\.?|inc\.?|incorporated|corp\.?|co\.?|ltd\.?)$/i, "").trim();
     const letters = t.replace(/[^A-Za-z]/g, "");
     if (letters && (letters === letters.toUpperCase() || letters === letters.toLowerCase())) t = this.titleCase(t);
     return t;
   },
+  // Internal accounting lines that show up as "customers" in distributor reports.
+  NON_STORE: /\b(fifo|adjustments?|inventory|breakage|samples?|promo(tion(al)?)?|marketing|damaged?|write.?offs?|voids?|house account|unassigned|no customer|returns?)\b/i,
   tidyAddr(s) { const t = String(s || "").replace(/\s+/g, " ").trim(); const letters = t.replace(/[^A-Za-z]/g, ""); return letters && letters === letters.toUpperCase() ? this.titleCase(t).replace(/\b(Po)\b/, "PO") : t; },
   guessType(name) {
     const n = String(name || "").toLowerCase();
@@ -145,7 +157,13 @@ const Importer = {
   },
 
   _cellText(v) { return v == null ? "" : (v instanceof Date ? "" : String(v).trim()); },
-  _norm(h) { return String(h == null ? "" : h).toLowerCase().replace(/[^a-z0-9#$%]+/g, " ").trim(); },
+  // Older normalization — kept so layouts saved before the camelCase fix still match.
+  _normLegacy(h) { return String(h == null ? "" : h).toLowerCase().replace(/[^a-z0-9#$%]+/g, " ").trim(); },
+  // ERP exports run words together: "CusKey" → "cus key", "ShipAdr2" → "ship adr 2".
+  _norm(h) {
+    return String(h == null ? "" : h).replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/(\d)([A-Za-z])/g, "$1 $2")
+      .toLowerCase().replace(/[^a-z0-9#$%]+/g, " ").trim();
+  },
 
   // Find the header row. Rows that contain several header-ish words ("Customer",
   // "Qty", "Date"…) win outright; otherwise fall back to the first text-heavy row.
@@ -176,28 +194,28 @@ const Importer = {
   /* ---------------- column mapping ---------------- */
   FIELDS: [
     { key: "store", label: "Store / customer name", req: true,
-      good: [/^(customer|cust|account|acct|retailer|store|outlet|licensee|premise|buyer|ship to|sold to|dba)( name| nm)?$/, /(customer|account|retailer|outlet|licensee|premise|store|ship to|sold to|dba) name$/],
-      ok: [/customer|account|retailer|outlet|licensee|premise|store|ship to|sold to|dba/], bad: /number|^no | no$|#|\bid\b|code|addr|street|city|state|zip|postal|phone|rep|salesman|route|class|\btype\b|chain|group|category|sales/ },
+      good: [/^(customer|cust|cus|account|acct|retailer|store|outlet|licensee|premise|buyer|ship to|sold to|dba)( name| nm)?$/, /(customer|cust|cus|account|retailer|outlet|licensee|premise|store|ship to|sold to|dba) name$/],
+      ok: [/customer|account|retailer|outlet|licensee|premise|store|ship to|sold to|dba|\bcus\b|\bcust\b/], bad: /number|^no | no$|#|\bid\b|\bkey\b|code|addr|\badr\b|street|city|state|zip|postal|phone|rep|salesman|route|class|\btype\b|chain|group|category|sales/ },
     { key: "date", label: "Date", req: false,
       good: [/^(date|invoice date|inv date|ship date|order date|delivery date|delivered|sale date|sales date|transaction date|trans date|period|month|week ending|week of|invoice dt|ship dt|date shipped|delivery dt)$/],
       ok: [/date|\bdt$|period|month|week/], bad: /updated|created|due|expir|birth|modified/ },
     { key: "qty", label: "Quantity", req: true,
-      good: [/^(qty|quantity|cases|case qty|cs|case|case count|volume|units|unit qty|qty sold|quantity sold|cases sold|total cases|ext qty|shipped qty|qty shipped|physical cases|cs qty|units sold)$/],
+      good: [/^(qty|quantity|cases|case qty|cs|case|case count|volume|units|unit qty|qty sold|quantity sold|cases sold|total cases|ext qty|shipped qty|qty shipped|physical cases|cs qty|units sold|item qty|item quantity)$/],
       ok: [/\bqty\b|quantity|\bcases?\b|\bcs\b|\bunits?\b|volume|\bpieces?\b|\bbottles?\b|\bpouches\b|\bpacks?\b|\beach\b/], bad: /price|amount|\$|cost|value|per |%|avg|average|inventory|on hand|\boh$/ },
     { key: "product", label: "Product / item", req: false,
-      good: [/^(item|item description|item desc|product|product name|product description|description|desc|brand|brand name|sku description|item name|flavor|material description|package)$/, /description|desc/],
+      good: [/^(item|item description|item desc|product|product name|product description|description|desc|brand|brand name|sku description|item name|flavor|material description|package)$/, /description|desc|item name/],
       ok: [/item|product|description|brand|material|flavor/], bad: /number|^no | no$|#|\bid\b|code|group|category|upc/ },
     { key: "sku", label: "SKU / item code (optional)", req: false,
       good: [/^(sku|item (no|number|nbr|#|code|id)|product (no|number|code|id)|upc|upc code|material (no|number)|item code)$/],
       ok: [/^item$/, /\bsku\b|upc/], bad: /description|desc|name/ },
     { key: "acctno", label: "Account # (optional)", req: false,
-      good: [/^(customer (no|number|num|nbr|id|code|#)|cust (no|num|nbr|id|#)|account (no|number|num|nbr|id|#)|acct (no|num|nbr|id|#)|retailer (id|no|number)|store (no|number|num|id|#)|outlet (id|no|number)|license (no|number|#)|ship to (no|number|id))$/],
-      ok: [/(customer|cust|account|acct|retailer|outlet|ship to|license).*(no|number|num|nbr|id|code|#)$/, /^(cust|acct) ?#$/], bad: /name|address/ },
+      good: [/^(customer|cust|cus|account|acct|retailer|store|outlet|ship to|license|licensee) ?(no|number|num|nbr|id|code|key|#)$/],
+      ok: [/(customer|cust|cus|account|acct|retailer|outlet|ship to|license).*(no|number|num|nbr|id|code|key|#)$/, /^(cust|acct|cus) ?#$/], bad: /name|address/ },
     { key: "address", label: "Street address", req: false,
-      good: [/^(address|street address|address 1|addr|addr1|street|address line 1|physical address|ship to address|store address)$/], ok: [/address|addr|street/], bad: /email|\bip\b|mail/ },
-    { key: "city", label: "City", req: false, good: [/^(city|town|ship to city|municipality|city name)$/], ok: [/city|town/], bad: /state|zip|county/ },
-    { key: "state", label: "State", req: false, good: [/^(state|st|state code|ship to state|province|state abbr)$/], ok: [/\bstate\b/], bad: /status|statement/ },
-    { key: "zip", label: "ZIP", req: false, good: [/^(zip|zip code|zipcode|postal code|postal|zip5)$/], ok: [/zip|postal/], bad: /\+/ },
+      good: [/^(address|street address|address ?1|addr|addr ?1|street|address line 1|physical address|ship to address|store address|ship (adr|addr|address)( ?\d)?)$/], ok: [/address|addr|\badr\b|street/], bad: /email|\bip\b|mail|city|zip|state/ },
+    { key: "city", label: "City", req: false, good: [/^(city|town|ship to city|ship city|municipality|city name)$/], ok: [/city|town/], bad: /state|zip|county/ },
+    { key: "state", label: "State", req: false, good: [/^(state|st|state code|ship to state|ship state|ship st|province|state abbr)$/], ok: [/\bstate\b/], bad: /status|statement/ },
+    { key: "zip", label: "ZIP", req: false, good: [/^(zip|zip code|zipcode|postal code|postal|zip5|ship zip|ship postal)$/], ok: [/zip|postal/], bad: /\+/ },
     { key: "uom", label: "Unit of measure (optional)", req: false, good: [/^(uom|unit of measure|u m|um|unit type)$/], ok: [], bad: /./ },
     { key: "amount", label: "Dollar amount (optional)", req: false,
       good: [/^(amount|sales|sales amount|extended|ext amount|ext sales|extended amount|total sales|revenue|net sales|sales \$|dollars|net amount|ext price|extended price|invoice amount)$/],
@@ -240,6 +258,8 @@ const Importer = {
       H.forEach((h, i) => {
         if (used.has(i)) return;
         let s = this._scoreHeader(f, h);
+        // "Cases 2025" vs "Cases 2026" side by side → prefer the most recent year
+        if (key === "qty" && s > 0) { const y = h.match(/\b(20\d\d)\b/); if (y) s += (+y[1] - 2000) / 1000; }
         // a bare "Account"/"Customer" column full of numbers is the account number
         if (key === "acctno" && s < 0 && S && /^(account|customer|cust|acct|retailer|store|outlet)$/.test(h) && S[i].numShare >= 0.6) s = 6;
         if (s > bs && contentOK(key, i)) { bs = s; bi = i; }
@@ -257,16 +277,60 @@ const Importer = {
     headers.forEach((h, i) => { const pid = this.guessProduct(h, products); if (pid !== "ignore" && !out[pid]) out[pid] = i; });
     return out;
   },
+  // Is ONE column carrying both customer names and the products under them?
+  detectHierarchy(headers, mapping, dataRows, products) {
+    if (mapping.store < 0 || mapping.product >= 0) return false;
+    const vals = dataRows.map((r) => this._cellText((r || [])[mapping.store])).filter(Boolean);
+    if (vals.length < 3) return false;
+    const hits = vals.filter((v) => this.guessProduct(v, products) !== "ignore").length;
+    const h = this._norm(headers[mapping.store]);
+    const headerSaysBoth = /customer|store|account|retailer|outlet/.test(h) && /product|item|brand/.test(h);
+    return headerSaysBoth || hits / vals.length >= 0.25;
+  },
+  // Clues about WHAT the numbers cover, from places other than the data itself:
+  // a "Filters"/"Parameters" sheet ("Year to Date From: 1/1/2026 To: 11/3/2026"), a year in the
+  // quantity header ("Cases 2026"), or the file name ("..._20261105_...").
+  metaHints(sheets, fileName, qtyHeader) {
+    const h = { asOf: null, from: null, year: null, ytd: false, asOfSource: "" };
+    for (const sh of sheets) {
+      for (const r of sh.rows.slice(0, 80)) {
+        const t = r.map((c) => this._cellText(c)).join(" ").replace(/<br\s*\/?>/gi, " ");
+        const m = t.match(/from:?\s*([0-9][0-9\/\-.]*)\s*to:?\s*([0-9][0-9\/\-.]*)/i);
+        if (m) {
+          const a = this.parseDate(m[1]), b = this.parseDate(m[2]);
+          if (b && (!h.asOf || b > h.asOf)) { h.asOf = b; h.from = a; h.asOfSource = "the report's own Period filter"; }
+          if (/year\s*to\s*date|\bytd\b/i.test(t)) h.ytd = true;
+        }
+      }
+    }
+    const fy = String(qtyHeader || "").match(/\b(20\d\d)\b/);
+    if (fy) h.year = +fy[1];
+    if (!h.asOf) { const fm = String(fileName || "").match(/(20\d\d)[-_.]?(\d\d)[-_.]?(\d\d)/); if (fm) { const d = this._iso(+fm[1], +fm[2], +fm[3]); if (d) { h.asOf = d; h.asOfSource = "the file name"; } } }
+    if (!h.year && h.asOf) h.year = +h.asOf.slice(0, 4);
+    if (/ytd|year.?to.?date/i.test(String(qtyHeader || ""))) h.ytd = true;
+    return h;
+  },
 
   /* ---------------- product matching ---------------- */
   _prodWords(p) { return String(p.name || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").split(" ").filter((w) => w && !["spiked", "whatcha", "drinking", "the", "and", "with"].includes(w)); },
+  // Distributors abbreviate: "PCH LEM" = peach lemonade, "TROP" = tropical. Derive likely
+  // abbreviations from the product's own words (prefixes + consonant skeleton) rather than
+  // hard-coding any one distributor's spelling: peach→pch, lemonade→lem/lemo/lmnd, tropical→trop/tro.
+  _wordAliases(w) {
+    const a = new Set([w]);
+    if (w.length >= 6) a.add(w.slice(0, 4));
+    if (w.length >= 7) a.add(w.slice(0, 3));
+    const sk = w[0] + w.slice(1).replace(/[aeiouy]/g, ""); if (sk.length >= 3 && sk !== w) a.add(sk);
+    return [...a];
+  },
   guessProduct(text, products) {
     const t = " " + String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() + " ";
     if (!t.trim()) return "ignore";
-    const whatcha = / whatcha /.test(t);
+    const whatcha = / whatcha | what drink(ing)? /.test(t); // "WHAT DRINK" = Whatcha Drinking, as some ERPs truncate it
+    const toks = new Set(t.trim().split(" "));
     let best = null, bestScore = 0, tie = false;
     for (const p of products) {
-      let sc = this._prodWords(p).filter((w) => t.includes(" " + w)).length;
+      let sc = this._prodWords(p).filter((w) => t.includes(" " + w) || this._wordAliases(w).some((a) => toks.has(a))).length;
       const sku = String(p.sku || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
       if (sku && t.includes(" " + sku + " ")) sc += 5;
       if (sc > bestScore) { best = p; bestScore = sc; tie = false; } else if (sc === bestScore && sc > 0) tie = true;
@@ -286,6 +350,17 @@ const Importer = {
     const totalRx = /^(grand\s+total|sub-?\s?total|report\s+total|total\s+for|total\s*[:\-]|totals?)\b\s*$|^(grand\s+total|sub-?\s?total|report\s+total|total\s+for|total\s*[:\-])/i;
     let ctx = { store: "", acct: "", address: "", city: "", state: "", zip: "", date: null };
 
+    // "Shared column" layout (e.g. Mancini): ONE column holds both customer names and the
+    // products listed beneath each one. A line is a product if it's a recognizable Whatcha
+    // product, or if the same text shows up more than once (products repeat under every
+    // customer; customer names don't). Everything else is a customer heading.
+    let isProd = null;
+    if (cfg.hierarchy && m.store >= 0) {
+      const counts = new Map(), prods = cfg.products || DB.products(), cache = new Map();
+      for (let ri = cfg.headerRow + 1; ri < aoa.length; ri++) { const t = txt(get(aoa[ri] || [], m.store)); if (t) counts.set(t, (counts.get(t) || 0) + 1); }
+      isProd = (t) => { if (!cache.has(t)) cache.set(t, this.guessProduct(t, prods) !== "ignore" || (counts.get(t) || 0) >= 2); return cache.get(t); };
+    }
+
     for (let ri = cfg.headerRow + 1; ri < aoa.length; ri++) {
       const r = aoa[ri] || [];
       if (r.every((c) => this._cellText(c) === "")) { skipped.blank++; continue; }
@@ -294,6 +369,18 @@ const Importer = {
 
       const dateParsed = m.date >= 0 ? this.parseDate(get(r, m.date)) : null;
       const cellsFor = () => ({ acct: m.acctno >= 0 ? txt(get(r, m.acctno)) : "", address: m.address >= 0 ? txt(get(r, m.address)) : "", city: m.city >= 0 ? txt(get(r, m.city)) : "", state: m.state >= 0 ? this.stateCode(get(r, m.state)) : "", zip: m.zip >= 0 ? this.zip5(get(r, m.zip)) : "" });
+
+      if (isProd) {
+        if (!storeCell) { skipped.noStore++; continue; }
+        if (!isProd(storeCell)) { ctx = Object.assign({ store: storeCell, date: dateParsed }, cellsFor()); skipped.groupHeaders++; continue; } // a customer heading — its own subtotal is ignored
+        const qty = this.num(get(r, m.qty));
+        if (!ctx.store) { skipped.noStore++; continue; }
+        if (isNaN(qty)) { skipped.noQty++; continue; }
+        productTexts.set(storeCell, (productTexts.get(storeCell) || 0) + 1);
+        rows.push({ ri: ri + 1, store: ctx.store, acct: ctx.acct, address: ctx.address, city: ctx.city, state: ctx.state, zip: ctx.zip, date: dateParsed || ctx.date || null,
+          amount: m.amount >= 0 ? this.num(get(r, m.amount)) : NaN, uom: m.uom >= 0 ? txt(get(r, m.uom)) : "", pid: null, productText: storeCell, skuText: "", qty });
+        continue;
+      }
 
       const qtyVals = wide ? Object.entries(wide).map(([pid, ci]) => [pid, this.num(get(r, ci))]) : [[null, this.num(get(r, m.qty))]];
       const hasQty = qtyVals.some(([, q]) => !isNaN(q));
@@ -323,6 +410,8 @@ const Importer = {
         rows.push({ ...base, pid: null, productText: pt, skuText: skuCell, qty });
       }
     }
+    // No state column? The ZIP code tells us (07094 → NJ), which also drives pricing + geography.
+    rows.forEach((r) => { if (!r.state && r.zip) r.state = this.stateFromZip(r.zip); });
     return { rows, skipped, productTexts };
   },
 
@@ -352,7 +441,7 @@ const Importer = {
   // inp: { rows, distributor, productMap, units, fallbackDate, options, overrides }
   buildPlan(inp) {
     const dist = inp.distributor;
-    const O = Object.assign({ createNew: true, publishNew: true, reconcile: true }, inp.options);
+    const O = Object.assign({ createNew: true, publishNew: true, reconcile: true, skipRepeats: false }, inp.options);
     const overrides = inp.overrides || {};
     const products = DB.products(); const prodById = new Map(products.map((p) => [p.id, p]));
     const stores = DB.stores();
@@ -366,7 +455,8 @@ const Importer = {
       const pid = r.pid || inp.productMap[r.productText];
       const prod = pid && pid !== "ignore" ? prodById.get(pid) : null;
       if (!prod) { stats.ignoredProduct++; continue; }
-      const date = r.date || inp.fallbackDate || null;
+      // Running-total reports have no per-order dates — everything is "as of" the report date.
+      const date = inp.cumulative ? inp.cumulative.asOf : (r.date || inp.fallbackDate || null);
       if (!date) { stats.noDate++; continue; }
       const u = /^(cs|case|cases|ca)$/i.test(r.uom) ? "cases" : /^(ea|each|unit|units|btl|bottle|pouch|pk)$/i.test(r.uom) ? "units" : inp.units;
       const cases = u === "units" ? r.qty / (prod.units_per_case || 24) : r.qty;
@@ -380,14 +470,17 @@ const Importer = {
 
     /* 2 · decide each store: matched / new / skipped */
     const rsArr = [...rsMap.values()];
-    const newStores = [];
+    // Names you've told me to skip before (e.g. an internal "adjustment" account) stay skipped.
+    const skipSet = new Set(((DB.kvGet("import_skips", {}) || {})[dist.id]) || []);
     for (const rs of rsArr) {
       rs.match = this._match(rs, stores, ix, dist);
-      const best = rs.match.best, ov = overrides[rs.key];
+      rs.nameKey = this.nameTokens(rs.name).join(" ");
+      const best = rs.match.best, ov = overrides[rs.key] && overrides[rs.key] !== "auto" ? overrides[rs.key] : null;
       rs.confidence = !best ? "new" : ["acct", "address", "exact"].includes(best.type) ? "sure" : best.type === "likely" ? "check" : "review";
-      if (ov === "skip") { rs.decision = "skip"; }
+      rs.autoSkip = !ov ? (skipSet.has(rs.nameKey) ? "you skipped this one before" : this.NON_STORE.test(rs.name) ? "looks like an internal adjustment, not a store" : "") : "";
+      if (ov === "skip" || rs.autoSkip) { rs.decision = "skip"; }
       else if (ov === "new") { rs.decision = O.createNew ? "new" : "skip"; }
-      else if (ov && ov !== "auto" && DB.store(ov)) { rs.decision = "match"; rs.store = DB.store(ov); }
+      else if (ov && DB.store(ov)) { rs.decision = "match"; rs.store = DB.store(ov); }
       else if (best && best.type !== "possible") { rs.decision = "match"; rs.store = best.store; }
       else { rs.decision = O.createNew ? "new" : "skip"; }
       if (rs.decision === "new") {
@@ -397,7 +490,7 @@ const Importer = {
           distributor_id: dist.id, contact_name: "", phone: "", email: "", notes: "", created_at: rs.firstDate, source: "import",
           dist_ids: rs.acct ? { [dist.id]: rs.acct } : {}, show_on_map: !!(O.publishNew && addr && city),
         };
-        newStores.push(ns); rs.newStore = ns; rs.sid = ns.id;
+        rs.newStore = ns; rs.sid = ns.id; // only created later, if it turns out to have real activity
       } else if (rs.decision === "match") { rs.sid = rs.store.id; }
     }
 
@@ -424,11 +517,58 @@ const Importer = {
     };
     const r2 = (n) => Math.round(n * 100) / 100;
     const newOrdMap = new Map();
-    const counts = { duplicates: 0, changed: 0, reconciled: 0, newLines: 0 };
-    const reconciled = [], changedLines = [], confirmedSids = new Set();
+    const counts = { duplicates: 0, changed: 0, reconciled: 0, newLines: 0, repeats: 0 };
+    const reconciled = [], changedLines = [], repeatLines = [], confirmedSids = new Set();
+    // Reports with no date column ("New Placement – 90 Day") get dated by the file, so a store that a
+    // rolling window re-lists next week would look new. Spot "same store + product + qty, ≤90 days apart".
+    const importedBySP = new Map();
+    if (inp.undated && !inp.cumulative) allOrders.forEach((o) => {
+      if (o.source !== "import" || o.adjustment || (o.distributor_id && o.distributor_id !== dist.id)) return;
+      (o.items || []).forEach((it) => { const k = o.store_id + "|" + it.product_id; let a = importedBySP.get(k); if (!a) importedBySP.set(k, (a = [])); a.push({ date: o.date, cases: it.cases }); });
+    });
+    const repeatOf = (sid, pid, cases, date) => (importedBySP.get(sid + "|" + pid) || []).find((e) => e.date !== date && Math.abs(e.cases - cases) < 0.005 && Math.abs(Date.parse(date) - Date.parse(e.date)) <= 90 * 86400000);
+
+    /* RUNNING TOTALS ("Cases 2026" = everything since Jan 1). The report gives a total per store &
+       product, not individual orders — so the only safe thing to record is what's NEW since last time:
+       new total − what's already on the books for that store/product this year. Hand-logged orders
+       count toward the total (up to what the report confirms); a total that FALLS creates an
+       adjustment. Re-uploading the same report therefore adds nothing. */
+    let cumInfo = null;
+    if (inp.cumulative) {
+      const cum = inp.cumulative, y0 = cum.year + "-01-01", y1 = cum.year + "-12-31";
+      const hasSnapshot = allOrders.some((o) => o.ytd_year === cum.year && o.distributor_id === dist.id);
+      const exImp = new Map(), exHand = new Map();
+      allOrders.forEach((o) => {
+        if (o.date < y0 || o.date > y1) return;
+        if (o.distributor_id && o.distributor_id !== dist.id) return;
+        const into = o.source === "import" ? exImp : exHand;
+        (o.items || []).forEach((it) => { const k = o.store_id + "|" + it.product_id; into.set(k, (into.get(k) || 0) + (it.cases || 0)); });
+      });
+      let alreadyCounted = 0;
+      for (const a of agg.values()) {
+        const T = r2(a.cases), k = a.sid + "|" + a.pid;
+        const imp = exImp.get(k) || 0, hand = exHand.get(k) || 0, remaining = T - imp;
+        if (T > 0.0001) confirmedSids.add(a.sid);
+        let delta;
+        if (remaining <= 0) delta = remaining; // the distributor's total fell (or matches) — never touch hand-logged orders
+        else { const used = Math.min(hand, remaining); delta = remaining - used; alreadyCounted += used; }
+        delta = r2(delta);
+        if (Math.abs(delta) < 0.005) { if (T > 0.0001) counts.duplicates++; else stats.zeroLines = (stats.zeroLines || 0) + 1; continue; }
+        const kind = delta < 0 ? "adjust" : hasSnapshot ? "delta" : "baseline";
+        const ok = a.sid + "|" + kind; let no = newOrdMap.get(ok);
+        if (!no) {
+          no = { id: uid("ord"), store_id: a.sid, distributor_id: dist.id, date: cum.asOf, items: [], export_state: { [dist.id]: "exported" }, created_at: cum.asOf, source: "import", line_keys: [], reported_amount: 0,
+            ytd_year: cum.year, ytd_asof: cum.asOf, ytd_baseline: kind === "baseline", adjustment: kind === "adjust" };
+          newOrdMap.set(ok, no);
+        }
+        no.items.push({ product_id: a.pid, cases: delta }); no.line_keys.push(dist.id + "|" + a.sid + "|ytd" + cum.year + "@" + cum.asOf + "|" + a.pid);
+        counts.newLines++; if (kind === "adjust") counts.adjustments = (counts.adjustments || 0) + 1;
+      }
+      cumInfo = { year: cum.year, asOf: cum.asOf, baseline: !hasSnapshot, alreadyCounted: r2(alreadyCounted) };
+    }
 
     // Oldest first, so the earliest delivery claims the earliest hand-logged order.
-    for (const a of [...agg.values()].sort((x, y) => x.date.localeCompare(y.date))) {
+    for (const a of (inp.cumulative ? [] : [...agg.values()].sort((x, y) => x.date.localeCompare(y.date)))) {
       if (a.cases <= 0.0001) { if (a.neg) stats.credits++; else stats.zeroLines = (stats.zeroLines || 0) + 1; continue; } // returns net out; zeros are skipped
       const cases = r2(a.cases);
       const key = dist.id + "|" + a.sid + "|" + a.date + "|" + a.pid;
@@ -457,6 +597,11 @@ const Importer = {
           cur.line_keys.push(key); cur.confirmed_date = a.date; counts.reconciled++; continue;
         }
       }
+      // looks like the same placement re-listed by an overlapping report?
+      if (inp.undated) {
+        const rep = repeatOf(a.sid, a.pid, cases, a.date);
+        if (rep) { repeatLines.push({ store: a.rs.name, date: a.date, cases, earlier: rep.date }); if (O.skipRepeats) { counts.repeats++; continue; } }
+      }
       // genuinely new
       const ok = a.sid + "|" + a.date;
       let no = newOrdMap.get(ok);
@@ -468,6 +613,10 @@ const Importer = {
     }
     const newOrders = [...newOrdMap.values()];
     const orderUpdates = [...work.values()].filter((w) => w.dirty).map((w) => ({ id: w.cur.id, cur: w.cur, prev: w.prev, kind: w.kind }));
+
+    // Only create accounts for stores that actually have activity (a row of zeros isn't a customer).
+    const newStores = rsArr.filter((rs) => rs.decision === "new" && confirmedSids.has(rs.sid)).map((rs) => rs.newStore);
+    rsArr.forEach((rs) => { if (rs.decision === "new" && !confirmedSids.has(rs.sid)) { rs.decision = "none"; rs.noActivity = true; } });
 
     /* 5 · keep accounts current: they're ordering, so they're active */
     const upd = new Map();
@@ -501,10 +650,22 @@ const Importer = {
     const dates = [...agg.values()].map((a) => a.date).sort();
     rsArr.sort((a, b) => ({ review: 0, check: 1, new: 2, sure: 3 }[a.confidence] - { review: 0, check: 1, new: 2, sure: 3 }[b.confidence]) || b.cases - a.cases);
 
+    const baselineCases = r2(newOrders.filter((o) => o.ytd_baseline).reduce((a, o) => a + o.items.reduce((x, i) => x + i.cases, 0), 0));
+    // Which "skip this store" choices to remember for next time (and which to forget).
+    const skipRemember = {
+      add: rsArr.filter((rs) => overrides[rs.key] === "skip").map((rs) => rs.nameKey),
+      remove: rsArr.filter((rs) => overrides[rs.key] && overrides[rs.key] !== "skip" && overrides[rs.key] !== "auto" && skipSet.has(rs.nameKey)).map((rs) => rs.nameKey),
+    };
+
+    // Revenue is priced per state — warn if a state in this report has no case price yet.
+    const priced = new Set(DB.pricing().filter((x) => +x.case_price > 0).map((x) => x.state));
+    const missingPricing = [...new Set(rsArr.filter((rs) => (rs.decision === "new" || rs.decision === "match") && confirmedSids.has(rs.sid)).map((rs) => (rs.decision === "new" ? rs.newStore.state : (rs.store.state || rs.state)) || "").filter((s) => s && !priced.has(s)))];
+
     return {
-      stats, counts, reportStores: rsArr, newStores, storeUpdates, newOrders, orderUpdates, leadWins, reconciled, changedLines,
-      totals: { newCases, orders: newOrders.length, newAccounts: newStores.length, activated, filled: storeUpdates.length - activated, storesInReport: rsArr.length, range: dates.length ? [dates[0], dates[dates.length - 1]] : null,
-        newAccountsNoMap: newStores.filter((s) => !s.show_on_map).length },
+      stats, counts, reportStores: rsArr, newStores, storeUpdates, newOrders, orderUpdates, leadWins, reconciled, changedLines, repeatLines, cumulative: cumInfo, skipRemember,
+      undated: !!inp.undated, warnings: { missingPricing },
+      totals: { newCases, baselineCases, orders: newOrders.length, newAccounts: newStores.length, activated, filled: storeUpdates.length - activated, storesInReport: rsArr.length, range: dates.length ? [dates[0], dates[dates.length - 1]] : null,
+        newAccountsNoMap: newStores.filter((s) => !s.show_on_map).length, newAccountsNoAddr: newStores.filter((s) => !s.address || !s.city).length },
       options: O, distributor: dist,
     };
   },
@@ -531,7 +692,15 @@ const Importer = {
       storeUpdates: plan.storeUpdates.map((u) => ({ id: u.id, prev: u.prev })),
       orderUpdates: plan.orderUpdates.map((u) => ({ id: u.id, prev: u.prev })),
       leadUpdates: plan.leadWins.map((w) => ({ id: w.leadId, prevStatus: w.prevStatus })),
+      ytd: plan.cumulative ? { ...plan.cumulative, baselineCases: plan.totals.baselineCases } : null,
     };
+    // remember "always skip this one" choices for this distributor
+    const sr = plan.skipRemember;
+    if (sr && (sr.add.length || sr.remove.length)) {
+      const all = DB.kvGet("import_skips", {}) || {}, set = new Set(all[plan.distributor.id] || []);
+      sr.add.forEach((k) => set.add(k)); sr.remove.forEach((k) => set.delete(k));
+      all[plan.distributor.id] = [...set]; DB.kvSet("import_skips", all);
+    }
     DB.kvSet("import_log", [entry, ...DB.kvGet("import_log", [])].slice(0, 60));
     return entry;
   },
@@ -562,13 +731,26 @@ const Importer = {
   },
   loadMapping(distId, headers) {
     const saved = (DB.kvGet("import_maps", {}) || {})[distId]; if (!saved || !saved.fieldHeaders) return null;
-    const H = headers.map((h) => this._norm(h)), mapping = {};
+    // Layouts saved by an older version used a simpler header normalization — accept either.
+    const H = headers.map((h) => this._norm(h)), HL = headers.map((h) => this._normLegacy(h)), mapping = {};
     for (const f of this.FIELDS) {
       const want = saved.fieldHeaders[f.key];
-      mapping[f.key] = want ? H.indexOf(want) : -1;
+      mapping[f.key] = want ? (H.indexOf(want) >= 0 ? H.indexOf(want) : HL.indexOf(want)) : -1;
       if (f.req && want && mapping[f.key] < 0) return null; // the report's layout changed — re-guess instead
     }
-    return { mapping, units: saved.units || "cases", productMap: saved.productMap || {} };
+    return { mapping, units: saved.units || "cases", productMap: saved.productMap || {}, hier: !!saved.hier, cumulative: !!saved.cumulative, skipRepeats: !!saved.skipRepeats };
+  },
+  // Which distributor sent this file? A layout you've imported before is the strongest clue;
+  // otherwise a distinctive word from the distributor's name in the file name.
+  detectDistributor(headers, fileName) {
+    const H = new Set(headers.map((h) => this._norm(h)).filter(Boolean)), HL = new Set(headers.map((h) => this._normLegacy(h)).filter(Boolean));
+    const maps = DB.kvGet("import_maps", {}) || {}, dists = DB.distributors();
+    const byLayout = dists.filter((d) => { const fh = (maps[d.id] || {}).fieldHeaders; if (!fh) return false; const need = Object.values(fh).filter(Boolean); return need.length >= 2 && need.every((w) => H.has(w) || HL.has(w)); });
+    if (byLayout.length === 1) return { dist: byLayout[0], why: "column layout you've imported before" };
+    const fn = " " + this._normLegacy(fileName) + " ", generic = new Set(["beverage", "beverages", "distributor", "distributors", "distributing", "company", "wine", "spirits", "inc", "llc", "the", "and", "northeast"]);
+    const byName = dists.filter((d) => this._normLegacy(d.name).split(" ").some((w) => w.length >= 4 && !generic.has(w) && fn.includes(" " + w)));
+    if (byName.length === 1) return { dist: byName[0], why: "file name" };
+    return null;
   },
 };
 window.Importer = Importer;
