@@ -14,14 +14,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Find Whatcha Near You | Alcohol Pouch Cocktail Locator</title>
 <meta name="description" content="Find Whatcha's spiked, ready-to-drink cocktail pouches near you. Search by zip code to locate the closest retailer carrying Spiked Peach Lemonade and Spiked Tropical Punch." />
-<link rel="canonical" href="https://www.whatchadrinking.com/store-locator/store-locator.html" />
+<link rel="canonical" href="https://www.whatchadrinking.com/store-locator" />
 <meta name="robots" content="index, follow" />
 <meta name="theme-color" content="#0526c5" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Whatcha Drinking?" />
 <meta property="og:title" content="Find Whatcha Near You | Alcohol Pouch Cocktail Locator" />
 <meta property="og:description" content="Find Whatcha's spiked, ready-to-drink cocktail pouches near you. Search by zip code to locate the closest retailer carrying Spiked Peach Lemonade and Spiked Tropical Punch." />
-<meta property="og:url" content="https://www.whatchadrinking.com/store-locator/store-locator.html" />
+<meta property="og:url" content="https://www.whatchadrinking.com/store-locator" />
 <meta property="og:image" content="https://www.whatchadrinking.com/assets/images/social/share-banner.png" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="Find Whatcha Near You | Alcohol Pouch Cocktail Locator" />
@@ -127,8 +127,6 @@
     letter-spacing: 0.06em; font-size: 0.8rem; padding: 0.5rem 0.9rem; border-radius: 999px; border: 0; cursor: pointer;
   }
   .store-popup .dir-btn { display: inline-block; margin-top: 0.4rem; }
-  .store-tap { display: none; font-size: 0.75rem; color: var(--ink); opacity: 0.65; margin-top: 0.3rem; }
-  .store-card.active .store-tap { display: block; }
   #no-results, #loading-state {
     padding: 2rem 1.1rem;
     font-size: 0.9rem;
@@ -171,7 +169,7 @@
   "@type": "BreadcrumbList",
   "itemListElement": [
     { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.whatchadrinking.com/" },
-    { "@type": "ListItem", "position": 2, "name": "Store Locator", "item": "https://www.whatchadrinking.com/store-locator/store-locator.html" }
+    { "@type": "ListItem", "position": 2, "name": "Store Locator", "item": "https://www.whatchadrinking.com/store-locator" }
   ]
 }
 </script>
@@ -298,7 +296,7 @@ function fetchStores() {
     .then(mapRows)
     .catch(function (e) {
       console.warn('Live store feed unavailable, falling back to stores.json', e);
-      return fetch('stores.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
+      return fetch('/store-locator/stores.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
     });
 }
 
@@ -368,7 +366,6 @@ function renderList() {
       '<div class="store-name">' + esc(s.name) + '</div>' +
       '<div class="store-address">' + esc(s.address) + '</div>' +
       (known ? '<div class="store-distance">' + s._dist.toFixed(1) + ' mi ' + (refPoint ? 'from your search' : 'away') + '</div>' : '') +
-      '<div class="store-tap">Tap again to get directions</div>' +
       '<a class="store-dir" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>';
   }).join('');
   document.getElementById('count').textContent = vis.length;

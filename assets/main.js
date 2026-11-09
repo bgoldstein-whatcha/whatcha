@@ -252,17 +252,63 @@
     }
   }
 
+  // Same OpenFreeMap vector style as the full Find Whatcha map, so the homepage preview matches it.
+  function loadScript(src, done) {
+    var js = document.createElement("script");
+    js.src = src; js.onload = function () { done(true); }; js.onerror = function () { done(false); };
+    document.head.appendChild(js);
+  }
+  function addBasemap(map, done) {
+    function fallback() {
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors", maxZoom: 19 }).addTo(map);
+      done();
+    }
+    var css = document.createElement("link");
+    css.rel = "stylesheet"; css.href = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css";
+    document.head.appendChild(css);
+    loadScript("https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js", function (ok) {
+      if (!ok) return fallback();
+      loadScript("https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js", function (ok2) {
+        if (!ok2 || !L.maplibreGL) return fallback();
+        try {
+          L.maplibreGL({ style: "https://tiles.openfreemap.org/styles/liberty", attribution: '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+          done();
+        } catch (e) { fallback(); }
+      });
+    });
+  }
+
   function buildLocatorMap() {
     var el = document.getElementById("locator-map");
     if (!el || typeof L === "undefined") return;
-    // generic map: no pins or highlighted areas, centered on the Northeast; the "Where's Whatcha?" button leads to the full locator
     var map = L.map(el, { scrollWheelZoom: false });
-    // framed on the Northeast (Mid-Atlantic up through New England) rather than the whole country
-    map.fitBounds([[38.6, -79.8], [44.6, -69.0]]);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
-      maxZoom: 18
-    }).addTo(map);
+    // framed on the Northeast until the live stores load; the "Where's Whatcha?" button leads to the full locator
+    var DEFAULT = [[38.6, -79.8], [44.6, -69.0]];
+    map.fitBounds(DEFAULT);
+    addBasemap(map, function () {});
+    // live stores: same public feed as the Find Whatcha page (name, address and coordinates of active stores only)
+    var URL_ = "https://ivvoyzehxpdqtqmfsoxb.supabase.co/rest/v1/public_map_stores?select=name,address,lat,lng";
+    var KEY = "sb_publishable_-_LLFYYSC5ctBmDL27gtdQ_P9343TDy";
+    fetch(URL_, { headers: { apikey: KEY, Authorization: "Bearer " + KEY } })
+      .then(function (r) { if (!r.ok) throw new Error("feed " + r.status); return r.json(); })
+      .then(function (rows) {
+        var pts = [];
+        (rows || []).forEach(function (r) {
+          if (r.lat == null || r.lng == null || !r.name) return;
+          var icon = L.divIcon({ className: "", html: '<div class="locator__pin"></div>', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -34] });
+          var m = L.marker([r.lat, r.lng], { icon: icon, title: r.name }).addTo(map);
+          var box = document.createElement("div");
+          box.className = "store-popup";
+          var h = document.createElement("h3"); h.textContent = r.name; box.appendChild(h);
+          var pa = document.createElement("p"); pa.textContent = r.address || ""; box.appendChild(pa);
+          var a = document.createElement("a"); a.href = "/store-locator"; a.textContent = "Find Whatcha near you →"; a.style.fontWeight = "700"; box.appendChild(a);
+          m.bindPopup(box);
+          pts.push([r.lat, r.lng]);
+        });
+        if (pts.length > 1) map.fitBounds(pts, { padding: [30, 30] });
+        else if (pts.length === 1) map.setView(pts[0], 12);
+      })
+      .catch(function () { /* map stays on the generic Northeast view */ });
   }
 
   function initMarquee() {

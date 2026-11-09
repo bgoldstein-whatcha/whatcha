@@ -407,7 +407,7 @@
   }
 
   /* ---------------- campaign link + QR builder ---------------- */
-  const LB_PAGES = [["/", "Homepage"], ["/whatchalookinat", "Pouch QR page"], ["/store-locator/store-locator", "Store locator"], ["/sell-whatcha", "Wanna sell Whatcha?"], ["/about", "About"], ["/brand-ambassador", "Brand ambassador"], ["/join-the-team", "Join the team"]];
+  const LB_PAGES = [["/", "Homepage"], ["/whatchalookinat", "Pouch QR page"], ["/store-locator", "Store locator"], ["/sell-whatcha", "Wanna sell Whatcha?"], ["/about", "About"], ["/brand-ambassador", "Brand ambassador"], ["/join-the-team", "Join the team"]];
   const LB_PRESETS = [["instagram", "social", "Instagram bio / story"], ["tiktok", "social", "TikTok bio"], ["qr", "qr", "Printed QR (pouch, sign, cart)"], ["newsletter", "email", "Email"], ["influencer", "influencer", "Influencer / ambassador"], ["linkedin", "social", "LinkedIn"], ["retailer", "referral", "Retail partner"]];
   function linkBuilder() {
     const st = WA._lb || (WA._lb = { page: "/", source: "instagram", medium: "social", campaign: "", content: "" });

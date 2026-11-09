@@ -24,7 +24,7 @@ Whatcha Drinking? is made by Cabana Cocktails, LLC, based in Chicago, IL. Contac
 - [Homepage](https://www.whatchadrinking.com/): brand overview and flavors
 - [FAQ](https://www.whatchadrinking.com/faq.html): common questions about the product, ABV, ingredients, and where to buy
 - [About](https://www.whatchadrinking.com/about.html): founder's story and origin of the brand
-- [Store Locator](https://www.whatchadrinking.com/store-locator/store-locator.html): find retailers carrying Whatcha near a given zip code
+- [Store Locator](https://www.whatchadrinking.com/store-locator): find retailers carrying Whatcha near a given zip code
 - [Sell Whatcha](https://www.whatchadrinking.com/sell-whatcha.html): retail and distribution partner inquiries
 - [Join the Team](https://www.whatchadrinking.com/join-the-team.html): careers/collaboration inquiries
 - [Brand Assets](https://www.whatchadrinking.com/brand-assets.html): official logos, product photography, and icons for press and partners
