@@ -71,6 +71,8 @@ const App = {
   async enterApp() {
     await SupabaseBackend.hydrate();
     this.showApp();
+    // Look up coordinates once per store so the public map is instant. Re-check after edits/imports too.
+    if (window.Geo) { Geo.fill(); if (!this._geoTimer) this._geoTimer = setInterval(() => Geo.fill({ toast: false }), 60000); }
   },
   showApp() {
     $("#gate").classList.add("hidden");

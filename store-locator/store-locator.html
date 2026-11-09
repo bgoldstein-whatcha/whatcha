@@ -69,7 +69,8 @@
     font-size: var(--fs-h3);
     margin: 0;
   }
-  .locator-toolbar__search { display: flex; gap: 0.6rem; }
+  .locator-toolbar__search { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+  .you-dot { width: 16px; height: 16px; border-radius: 50%; background: #1a73e8; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(26,115,232,.35), 0 1px 4px rgba(0,0,0,.4); }
   #zip-input {
     padding: 0.6rem 0.9rem;
     border-radius: var(--radius-sm);
@@ -119,6 +120,15 @@
   .store-address { font-size: 0.85rem; color: var(--ink); line-height: 1.4; }
   .store-distance { font-size: 0.8rem; color: var(--coral-deep); font-weight: 700; margin-top: 0.3rem; }
   .store-hours { font-size: 0.8rem; color: var(--ink); opacity: 0.7; margin-top: 0.15rem; }
+  .store-dir { display: none; margin-top: 0.55rem; }
+  .store-card.active .store-dir { display: inline-block; }
+  .store-dir, .store-popup .dir-btn {
+    background: var(--navy); color: #fff !important; text-decoration: none; font-family: var(--font-ui);
+    letter-spacing: 0.06em; font-size: 0.8rem; padding: 0.5rem 0.9rem; border-radius: 999px; border: 0; cursor: pointer;
+  }
+  .store-popup .dir-btn { display: inline-block; margin-top: 0.4rem; }
+  .store-tap { display: none; font-size: 0.75rem; color: var(--ink); opacity: 0.65; margin-top: 0.3rem; }
+  .store-card.active .store-tap { display: block; }
   #no-results, #loading-state {
     padding: 2rem 1.1rem;
     font-size: 0.9rem;
@@ -207,6 +217,7 @@
     <div class="locator-toolbar__search">
       <input id="zip-input" type="text" placeholder="Enter zip code" maxlength="10" />
       <button id="find-btn" class="btn" onclick="searchByZip()">Search</button>
+      <button id="near-btn" class="btn btn--outline" type="button" onclick="nearMe()">&#9678; Near me</button>
     </div>
   </div>
 
@@ -234,7 +245,9 @@
 <a class="footer-hq-login locator-hq-login" href="/dashboard">HQ Login</a>
 
 <script src="../assets/vendor/leaflet/leaflet.js"></script>
-<script src="../assets/data/ct-nj.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
 <script src="../assets/main.js"></script>
 <script>
 // ════════════════════════════════════════════════
@@ -244,58 +257,45 @@
 //  repeat visits don't re-geocode the same address.
 // ════════════════════════════════════════════════
 var STORES = [];
-var map, statesLayer, tileLayer, markers = [], infoPopups = [], activeCard = null, comingSoonPopup = null;
+var map, markers = [], activeIdx = -1, refPoint = null, userPoint = null;
 var GEOCODE_CACHE_KEY = 'whatchaGeocodeCache';
+var DEFAULT_BOUNDS = [[38.85, -75.65], [42.1, -71.75]]; // CT + NJ
 
-function loadGeocodeCache() {
-  try { return JSON.parse(localStorage.getItem(GEOCODE_CACHE_KEY)) || {}; }
-  catch (e) { return {}; }
-}
-function saveGeocodeCache(cache) {
-  localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(cache));
-}
-function isGeocodeCached(address) {
-  if (!address) return false;
-  var cache = loadGeocodeCache();
-  return !!(cache[address] || cache[address + '|us']);
-}
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function loadGeocodeCache() { try { return JSON.parse(localStorage.getItem(GEOCODE_CACHE_KEY)) || {}; } catch (e) { return {}; } }
+function saveGeocodeCache(c) { try { localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(c)); } catch (e) {} }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-function sleep(ms) { return new Promise(function (resolve) { setTimeout(resolve, ms); }); }
-
-// Nominatim's usage policy asks for max ~1 request/sec and result caching,
-// which is why every lookup is cached in localStorage by address.
+// Nominatim is only a fallback now (stores carry saved coordinates) and for zip searches; cached by address.
 function geocode(address, usOnly) {
-  var cache = loadGeocodeCache();
-  var cacheKey = usOnly ? address + '|us' : address;
-  if (cache[cacheKey]) return Promise.resolve(cache[cacheKey]);
+  var cache = loadGeocodeCache(), key = usOnly ? address + '|us' : address;
+  if (cache[key]) return Promise.resolve(cache[key]);
   var url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
-  // a bare zip code is ambiguous worldwide (e.g. "06110" also matches a Spanish
-  // postcode) — restrict to the US when we know we're searching a US zip
   if (usOnly) url += '&countrycodes=us';
-  return fetch(url).then(function (res) { return res.json(); }).then(function (data) {
-    if (!data || !data.length) return null;
-    var coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    cache[cacheKey] = coords;
-    saveGeocodeCache(cache);
-    return coords;
+  return fetch(url).then(function (r) { return r.json(); }).then(function (d) {
+    if (!d || !d.length) return null;
+    var c = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+    cache[key] = c; saveGeocodeCache(cache); return c;
   }).catch(function () { return null; });
 }
 
 var SUPABASE_URL = 'https://ivvoyzehxpdqtqmfsoxb.supabase.co';
-// Publishable (public) key — safe in the browser; the view only exposes
-// name + address of active stores, and RLS protects everything else.
+// Publishable (public) key — safe in the browser; the view only exposes name, address and map coordinates of active stores.
 var SUPABASE_KEY = 'sb_publishable_-_LLFYYSC5ctBmDL27gtdQ_P9343TDy';
 
+function mapRows(rows) {
+  return (rows || []).filter(function (r) { return r.name && r.address; }).map(function (r) {
+    return { name: r.name, address: r.address, lat: r.lat != null ? +r.lat : null, lng: r.lng != null ? +r.lng : null };
+  });
+}
 function fetchStores() {
-  return fetch(SUPABASE_URL + '/rest/v1/public_map_stores?select=name,address,city,state', {
-    headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
-  })
-    .then(function (res) { if (!res.ok) throw new Error('map feed ' + res.status); return res.json(); })
-    .then(function (rows) {
-      return (rows || [])
-        .filter(function (r) { return r.name && r.address; })
-        .map(function (r) { return { name: r.name, address: r.address }; });
-    })
+  function get(select) {
+    return fetch(SUPABASE_URL + '/rest/v1/public_map_stores?select=' + select, { headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY } })
+      .then(function (res) { if (!res.ok) throw new Error('map feed ' + res.status); return res.json(); });
+  }
+  // lat/lng columns exist once the updated supabase-public-map.sql has been run; fall back to the older shape until then
+  return get('name,address,city,state,lat,lng').catch(function () { return get('name,address,city,state'); })
+    .then(mapRows)
     .catch(function (e) {
       console.warn('Live store feed unavailable, falling back to stores.json', e);
       return fetch('stores.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; });
@@ -303,186 +303,197 @@ function fetchStores() {
 }
 
 function haversine(lat1, lng1, lat2, lng2) {
-  var R = 3958.8;
-  var dLat = (lat2 - lat1) * Math.PI / 180;
-  var dLng = (lng2 - lng1) * Math.PI / 180;
-  var a = Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  var R = 3958.8, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
+  var a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function clearMarkers() {
-  markers.forEach(function (m) { map.removeLayer(m); });
-  markers = [];
+// One tap on a store selects it; the next tap (or the button) opens turn-by-turn directions
+// in Apple Maps on iPhone/Mac, Google Maps everywhere else.
+function directionsUrl(s) {
+  var q = encodeURIComponent(s.name + ', ' + s.address);
+  var apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && (navigator.maxTouchPoints > 0 || /iPhone|iPad|iPod/.test(navigator.userAgent) || /Mac/.test(navigator.platform));
+  return apple ? 'https://maps.apple.com/?daddr=' + q + '&dirflg=d' : 'https://www.google.com/maps/dir/?api=1&destination=' + q;
+}
+function openDirections(i) {
+  if (typeof gtag === 'function') gtag('event', 'store_directions');
+  window.open(directionsUrl(STORES[i]), '_blank', 'noopener');
 }
 
-function addMarker(store, coords, index) {
-  // same teardrop pin as the homepage locator map (.locator__pin in
-  // assets/style.css), so store pins read as the same brand mark everywhere
-  var icon = L.divIcon({
-    className: '',
-    html: '<div class="locator__pin"></div>',
-    iconSize: [34, 34],
-    iconAnchor: [17, 34],
-    popupAnchor: [0, -34]
+function pinIcon() {
+  return L.divIcon({ className: '', html: '<div class="locator__pin"></div>', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -34] });
+}
+
+function buildMarkers() {
+  markers.forEach(function (m) { if (m) map.removeLayer(m); });
+  markers = []; activeIdx = -1;
+  STORES.forEach(function (s, i) {
+    if (s._lat == null) { markers.push(null); return; }
+    var m = L.marker([s._lat, s._lng], { icon: pinIcon() }).addTo(map);
+    m.bindPopup('<div class="store-popup"><h3>' + esc(s.name) + '</h3><p>' + esc(s.address) + '</p>' +
+      '<a class="dir-btn" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>');
+    m.on('click', function () { selectStore(i, false); });
+    markers.push(m);
   });
-  var marker = L.marker([coords.lat, coords.lng], { icon: icon }).addTo(map);
-  var popupHtml = '<div class="store-popup"><h3>' + store.name + '</h3><p>' + store.address + '</p>' +
-    (store.hours ? '<p>' + store.hours + '</p>' : '') + (store.phone ? '<p>' + store.phone + '</p>' : '') + '</div>';
-  marker.bindPopup(popupHtml);
-  marker.on('click', function () { selectStore(index); });
-  markers.push(marker);
 }
 
-function addSidebarCard(store, index) {
-  var card = document.createElement('div');
-  card.className = 'store-card';
-  card.id = 'card-' + index;
-  card.innerHTML =
-    '<div class="store-name">' + store.name + '</div>' +
-    '<div class="store-address">' + store.address + '</div>' +
-    (store.hours ? '<div class="store-hours">' + store.hours + '</div>' : '') +
-    '<div class="store-distance" id="dist-' + index + '"></div>';
-  card.onclick = function () {
-    selectStore(index);
-    // only zoom IN if the map is currently more zoomed out than a
-    // "can read this pin" level — never snap zoom on a tap that's just
-    // selecting a store already comfortably in view (was jumping to a
-    // fixed zoom on every tap, which felt like the map randomly zooming)
-    map.setView([store._lat, store._lng], Math.max(map.getZoom(), 13));
-  };
-  document.getElementById('store-list').appendChild(card);
+function selectStore(i, fromList) {
+  if (i === activeIdx && fromList) { openDirections(i); return; }   // second tap → navigate
+  activeIdx = i;
+  var s = STORES[i];
+  if (markers[i]) markers[i].openPopup();
+  if (fromList) map.setView([s._lat, s._lng], Math.max(map.getZoom(), 14), { animate: true });
+  renderList();
+  var el = document.getElementById('card-' + i);
+  if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
-function selectStore(index) {
-  if (activeCard) activeCard.classList.remove('active');
-  activeCard = document.getElementById('card-' + index);
-  if (activeCard) activeCard.classList.add('active');
-  markers[index].openPopup();
-}
-
-var isRendering = false;
-
-async function geocodeAndRender(storesToRender) {
-  isRendering = true;
-  clearMarkers();
-  document.getElementById('store-list').innerHTML = '';
-  document.getElementById('no-results').style.display = 'none';
-  document.getElementById('loading-state').style.display = storesToRender.length ? 'block' : 'none';
-
-  var bounds = [];
-  var rendered = 0;
-
-  for (var i = 0; i < storesToRender.length; i++) {
-    var store = storesToRender[i];
-    var hadCoords = !!(store.lat && store.lng);
-    // a cached address (or one we've already resolved) needs no network call,
-    // so we can render it instantly — only uncached lookups get throttled below
-    var wasCached = hadCoords || isGeocodeCached(store.address);
-    var coords = hadCoords ? { lat: store.lat, lng: store.lng } : await geocode(store.address);
-    if (!coords) continue;
-    store._lat = coords.lat;
-    store._lng = coords.lng;
-    rendered++;
-    bounds.push([coords.lat, coords.lng]);
-    addMarker(store, coords, i);
-    addSidebarCard(store, i);
-    // stay comfortably under Nominatim's ~1 req/sec guidance for any uncached lookups
-    if (!wasCached) await sleep(1100);
-  }
-
-  isRendering = false;
-  document.getElementById('loading-state').style.display = 'none';
-  document.getElementById('count').textContent = rendered;
-
-  if (rendered === 0) {
-    document.getElementById('no-results').style.display = 'block';
-    // no individual locations listed yet: frame the shaded CT + NJ (the sidebar carries the
-    // "store details coming soon" message, so no popup covers the map)
-    map.fitBounds(statesLayer.getBounds(), { padding: [30, 30] });
-  } else {
-    // real locations exist — make sure the placeholder notice isn't floating over them
-    if (comingSoonPopup) map.closePopup(comingSoonPopup);
-    if (bounds.length === 1) {
-      map.setView(bounds[0], 13);
-    } else {
-      map.fitBounds(bounds, { padding: [30, 30] });
+// The sidebar always shows the stores inside the current map view, nearest first —
+// so panning/zooming the map loads the matching list automatically.
+function renderList() {
+  var b = map.getBounds(), known = refPoint || userPoint, c = known || map.getCenter();
+  var vis = [];
+  STORES.forEach(function (s, i) {
+    if (s._lat == null) return;
+    if (i === activeIdx || b.contains([s._lat, s._lng])) {
+      s._dist = haversine(c.lat, c.lng, s._lat, s._lng);
+      vis.push(i);
     }
+  });
+  vis.sort(function (x, y) { return STORES[x]._dist - STORES[y]._dist; });
+  var list = document.getElementById('store-list');
+  list.innerHTML = vis.map(function (i) {
+    var s = STORES[i];
+    return '<div class="store-card' + (i === activeIdx ? ' active' : '') + '" id="card-' + i + '" data-i="' + i + '" role="button" tabindex="0">' +
+      '<div class="store-name">' + esc(s.name) + '</div>' +
+      '<div class="store-address">' + esc(s.address) + '</div>' +
+      (known ? '<div class="store-distance">' + s._dist.toFixed(1) + ' mi ' + (refPoint ? 'from your search' : 'away') + '</div>' : '') +
+      '<div class="store-tap">Tap again to get directions</div>' +
+      '<a class="store-dir" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>';
+  }).join('');
+  document.getElementById('count').textContent = vis.length;
+  var none = !vis.length;
+  document.getElementById('no-results').textContent = STORES.length
+    ? 'No Whatcha stores in this part of the map. Zoom out or drag the map to find the nearest ones.'
+    : 'Loading stores…';
+  document.getElementById('no-results').style.display = none ? 'block' : 'none';
+}
+
+document.getElementById('store-list').addEventListener('click', function (e) {
+  if (e.target.closest('.store-dir')) return;               // the button is a normal link
+  var card = e.target.closest('.store-card'); if (!card) return;
+  selectStore(+card.getAttribute('data-i'), true);
+});
+document.getElementById('store-list').addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  var card = e.target.closest && e.target.closest('.store-card'); if (!card) return;
+  e.preventDefault(); selectStore(+card.getAttribute('data-i'), true);
+});
+
+var geoRun = 0;
+async function loadStores(data, frame) {
+  STORES = data; var run = ++geoRun;
+  STORES.forEach(function (s) { if (s.lat != null && s.lng != null && !isNaN(s.lat)) { s._lat = s.lat; s._lng = s.lng; } });
+  document.getElementById('loading-state').style.display = 'none';
+  buildMarkers(); renderList();
+  if (frame) frameStores();
+  // Stores without saved coordinates (until HQ has looked them up) resolve one by one, cached
+  for (var i = 0; i < STORES.length; i++) {
+    if (run !== geoRun) return;
+    var s = STORES[i]; if (s._lat != null) continue;
+    var cached = loadGeocodeCache()[s.address];
+    var c = await geocode(s.address); if (run !== geoRun) return;
+    if (!cached) await sleep(1100);
+    if (!c) continue;
+    s._lat = c.lat; s._lng = c.lng; buildMarkers(); renderList();
   }
+  if (frame && run === geoRun) frameStores();
+}
+
+function frameStores() {
+  var pts = STORES.filter(function (s) { return s._lat != null; }).map(function (s) { return [s._lat, s._lng]; });
+  if (!pts.length) map.fitBounds(DEFAULT_BOUNDS);
+  else if (pts.length === 1) map.setView(pts[0], 13);
+  else map.fitBounds(pts, { padding: [30, 30] });
 }
 
 function searchByZip() {
   var zip = document.getElementById('zip-input').value.trim();
-  if (!zip) { geocodeAndRender(STORES); return; }
+  if (!zip) { refPoint = null; frameStores(); return; }
   if (typeof gtag === 'function') gtag('event', 'store_locator_search');
-
   geocode(zip, true).then(function (center) {
     if (!center) { alert('Could not find that zip code.'); return; }
-    var R = 60; // miles radius
-    var nearby = STORES.filter(function (s) {
-      if (!s._lat || !s._lng) return true; // not yet geocoded — include, will resolve on render
-      s._dist = haversine(center.lat, center.lng, s._lat, s._lng);
-      return s._dist <= R;
-    }).sort(function (a, b) { return (a._dist || 0) - (b._dist || 0); });
-
-    geocodeAndRender(nearby).then(function () {
-      nearby.forEach(function (s, i) {
-        var el = document.getElementById('dist-' + i);
-        if (el && s._dist != null) el.textContent = s._dist.toFixed(1) + ' mi away';
-      });
-    });
+    refPoint = L.latLng(center.lat, center.lng);
+    var near = STORES.filter(function (s) { return s._lat != null; })
+      .map(function (s) { return { p: [s._lat, s._lng], d: haversine(center.lat, center.lng, s._lat, s._lng) }; })
+      .sort(function (a, b) { return a.d - b.d; }).slice(0, 5).filter(function (x) { return x.d <= 60; });
+    var pts = near.map(function (x) { return x.p; }); pts.push([center.lat, center.lng]);
+    map.fitBounds(pts, { padding: [40, 40], maxZoom: 14 });
+    renderList();
   });
 }
-
-document.getElementById('zip-input').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') searchByZip();
-});
-
-// ── Live auto-refresh ──
-// The map reads the dashboard's public feed directly, so marking a store
-// active in HQ already shows it on the next page load. This poll keeps a
-// map that's ALREADY open in sync too: every 60s it re-checks the feed and
-// re-renders only when the active-store list actually changed. Cached
-// addresses re-render instantly (no re-geocoding), so this is cheap.
-var POLL_MS = 60000;
-var lastStoresSignature = '';
-
-function storesSignature(list) {
-  return (list || [])
-    .map(function (s) { return (s.name || '') + '|' + (s.address || ''); })
-    .sort()
-    .join('~~');
+var youMarker = null;
+function showYou(lat, lng) {
+  userPoint = L.latLng(lat, lng);
+  if (youMarker) map.removeLayer(youMarker);
+  youMarker = L.marker(userPoint, { icon: L.divIcon({ className: '', html: '<div class="you-dot"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }), interactive: false, keyboard: false }).addTo(map);
 }
+function locate(cb, errCb) {
+  navigator.geolocation.getCurrentPosition(function (pos) { showYou(pos.coords.latitude, pos.coords.longitude); cb(); }, errCb || function () {},
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+}
+// "Near me": zoom to the closest stores and measure from the visitor
+function nearMe() {
+  var btn = document.getElementById('near-btn');
+  if (!navigator.geolocation) { alert('Your browser can\'t share your location. Try searching by zip code.'); return; }
+  if (typeof gtag === 'function') gtag('event', 'store_locator_near_me');
+  btn.disabled = true; btn.textContent = 'Locating…';
+  locate(function () {
+    btn.disabled = false; btn.innerHTML = '&#9678; Near me';
+    document.getElementById('zip-input').value = ''; refPoint = null;
+    var near = STORES.filter(function (s) { return s._lat != null; })
+      .map(function (s) { return { p: [s._lat, s._lng], d: haversine(userPoint.lat, userPoint.lng, s._lat, s._lng) }; })
+      .sort(function (a, b) { return a.d - b.d; }).slice(0, 3);
+    var pts = near.map(function (x) { return x.p; }); pts.push([userPoint.lat, userPoint.lng]);
+    map.fitBounds(pts, { padding: [50, 50], maxZoom: 14 });
+    renderList();
+  }, function (err) {
+    btn.disabled = false; btn.innerHTML = '&#9678; Near me';
+    alert(err && err.code === 1 ? 'Location is turned off for this site. Allow it in your browser, or search by zip code.' : 'Couldn\'t get your location. Try searching by zip code.');
+  });
+}
+// On page load, quietly measure distances from the visitor (the browser asks permission once). Map framing is unchanged.
+function autoLocate() {
+  if (!navigator.geolocation) return;
+  locate(function () { renderList(); });
+}
+document.getElementById('zip-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') searchByZip(); });
+document.getElementById('zip-input').addEventListener('input', function () { if (!this.value.trim()) refPoint = null; });
 
+// Live refresh: re-check the feed every minute and rebuild only if the store list (or coordinates) changed.
+var POLL_MS = 60000, lastSig = '';
+function sig(list) { return (list || []).map(function (s) { return [s.name, s.address, s.lat, s.lng].join('|'); }).sort().join('~~'); }
 function refreshStores() {
-  if (isRendering) return;                                        // a render is mid-flight
-  if (document.getElementById('zip-input').value.trim()) return;  // don't disrupt a zip search
   fetchStores().then(function (data) {
-    var sig = storesSignature(data);
-    if (sig === lastStoresSignature) return;                      // nothing changed
-    lastStoresSignature = sig;
-    STORES = data;
-    geocodeAndRender(STORES);
+    var g = sig(data); if (g === lastSig) return;
+    lastSig = g; loadStores(data, false);
   });
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  map = L.map('map', { scrollWheelZoom: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 18
-  }).addTo(map);
-  // Whatcha is in stores in CT and NJ: shade both states (no individual stores shown)
-  statesLayer = window.whatchaAddStates(map);
-  map.fitBounds(statesLayer.getBounds(), { padding: [30, 30] });
-
-  fetchStores().then(function (data) {
-    STORES = data;
-    lastStoresSignature = storesSignature(data);
-    geocodeAndRender(STORES);
-  });
-
+  map = L.map('map', { scrollWheelZoom: true });
+  // OpenFreeMap vector tiles (free, no API key). Falls back to standard OSM tiles if the vector library can't load.
+  try {
+    L.maplibreGL({ style: 'https://tiles.openfreemap.org/styles/liberty', attribution: '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' }).addTo(map);
+  } catch (e) {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 }).addTo(map);
+  }
+  map.fitBounds(DEFAULT_BOUNDS);
+  map.on('moveend zoomend', renderList);   // scrolling / panning / zooming the map reloads the list
+  document.getElementById('loading-state').style.display = 'block';
+  fetchStores().then(function (data) { lastSig = sig(data); loadStores(data, true); });
   setInterval(refreshStores, POLL_MS);
+  autoLocate();
 });
 </script>
 </body>
