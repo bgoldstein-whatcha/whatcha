@@ -6,7 +6,7 @@
 
    Public API:  whatcha.track("event_name", { any: "props" })
                 whatcha.identify("email@x.com", "Name")
-   Skip your own visits: open any page with ?wa_ignore=1  (undo: ?wa_ignore=0)
+   Skip your own visits (first-party AND Google Analytics): open any page with ?wa_ignore=1  (undo: ?wa_ignore=0)
    — logging into /dashboard on a device does this automatically.
    ============================================================ */
 (function () {
@@ -33,7 +33,11 @@
 
   var noop = function () {};
   w.whatcha = { track: noop, identify: noop };
-  if (lsGet("wa_ignore") === "1") return;
+  if (lsGet("wa_ignore") === "1") {
+    // excluded device: also switch off Google Analytics for this browser (gtag.js loads after window load, so this lands first)
+    w["ga-disable-G-2ZN64HZ3Q2"] = true;
+    return;
+  }
   if (/^\/dashboard(\/|$)/.test(loc.pathname)) return;
 
   function uuid() {
