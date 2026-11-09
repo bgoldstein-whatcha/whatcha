@@ -5,9 +5,6 @@
     { "source": "/store-locator/store-locator", "destination": "/store-locator", "permanent": true },
     { "source": "/store-locator/store-locator.html", "destination": "/store-locator", "permanent": true }
   ],
-  "rewrites": [
-    { "source": "/store-locator", "destination": "/store-locator/store-locator.html" }
-  ],
   "headers": [
     {
       "source": "/assets/fonts/(.*)",
