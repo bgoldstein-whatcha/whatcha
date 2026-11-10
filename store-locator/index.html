@@ -307,11 +307,14 @@ function haversine(lat1, lng1, lat2, lng2) {
 }
 
 // One tap on a store selects it; the next tap (or the button) opens turn-by-turn directions
-// in Apple Maps on iPhone/Mac, Google Maps everywhere else.
+// in Apple Maps on iPhone/iPad, Google Maps everywhere else.
 function directionsUrl(s) {
   var q = encodeURIComponent(s.name + ', ' + s.address);
-  var apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && (navigator.maxTouchPoints > 0 || /iPhone|iPad|iPod/.test(navigator.userAgent) || /Mac/.test(navigator.platform));
-  return apple ? 'https://maps.apple.com/?daddr=' + q + '&dirflg=d' : 'https://www.google.com/maps/dir/?api=1&destination=' + q;
+  // iPhone / iPad / iPod → Apple Maps; everything else (Android, Mac, Windows) → Google Maps
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    return 'https://maps.apple.com/?daddr=' + q + '&dirflg=d';
+  }
+  return 'https://www.google.com/maps/dir/?api=1&destination=' + q;
 }
 function openDirections(i) {
   if (typeof gtag === 'function') gtag('event', 'store_directions');
