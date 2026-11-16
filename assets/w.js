@@ -33,6 +33,7 @@
 
   var noop = function () {};
   w.whatcha = { track: noop, identify: noop };
+  try { if (w.top !== w.self) return; } catch (e) { return; }   // never count previews/embeds (e.g. the HQ heatmap frame)
   if (lsGet("wa_ignore") === "1") {
     // excluded device: also switch off Google Analytics for this browser (gtag.js loads after window load, so this lands first)
     w["ga-disable-G-2ZN64HZ3Q2"] = true;
@@ -339,6 +340,109 @@
   }
   d.addEventListener("visibilitychange", function () { if (!visible()) sendVitals(); });
   w.addEventListener("pagehide", sendVitals);
+
+  // ---------- heatmap data: where people click, hover and spend their time ----------
+  // Positions are stored RELATIVE TO THE ELEMENT they were on (path of child indexes from <body> + % across/down
+  // that element), so the dashboard can paint them onto the live page at any screen width. One compact
+  // "heat" event per page view is sent when the visitor leaves (~1-3 KB).
+  var heat = { sel: [], idx: {}, c: [], h: {}, a: {} };
+  var heatLast = { x: -1, y: -1, t: 0 };
+  function heatReset() { heat = { sel: [], idx: {}, c: [], h: {}, a: {} }; }
+  function heatNode(el) {
+    var chain = [], n = el;
+    while (n && n !== d.body && n.parentElement) { chain.push(n); n = n.parentElement; }
+    if (n !== d.body) return null;
+    chain.reverse();
+    if (chain.length > 8) chain.length = 8;
+    var path = [], cur = d.body;
+    for (var i = 0; i < chain.length; i++) {
+      path.push(Array.prototype.indexOf.call(cur.children, chain[i]));
+      cur = chain[i];
+    }
+    return { el: chain.length ? chain[chain.length - 1] : d.body, path: path.join(".") };
+  }
+  function heatSel(path) {
+    if (heat.idx[path] == null) {
+      if (heat.sel.length >= 40) return -1;
+      heat.idx[path] = heat.sel.length; heat.sel.push(path);
+    }
+    return heat.idx[path];
+  }
+  function fracOf(el, x, y) {
+    var r = el.getBoundingClientRect();
+    var fx = r.width ? Math.round((x - r.left) / r.width * 100) : 50;
+    var fy = r.height ? Math.round((y - r.top) / r.height * 100) : 50;
+    return [Math.max(0, Math.min(100, fx)), Math.max(0, Math.min(100, fy))];
+  }
+  d.addEventListener("click", function (ev) {
+    try {
+      if (heat.c.length >= 30 || !ev.target || ev.target.nodeType !== 1) return;
+      var nd = heatNode(ev.target); if (!nd) return;
+      var si = heatSel(nd.path); if (si < 0) return;
+      var f = fracOf(nd.el, ev.clientX, ev.clientY);
+      heat.c.push([si, f[0], f[1]]);
+    } catch (e) {}
+  }, true);
+  var canHover = false;
+  try { canHover = w.matchMedia("(hover: hover)").matches; } catch (e) {}
+  if (canHover) w.addEventListener("mousemove", function (ev) { heatLast.x = ev.clientX; heatLast.y = ev.clientY; heatLast.t = Date.now(); }, { passive: true, capture: true });
+  var ATTN_SEL = "header, footer, section, main > *";
+  setInterval(function () {
+    try {
+      if (!visible() || Date.now() - lastActive > IDLE_MS) return;
+      var t = Date.now(), vh = w.innerHeight || 0;
+      // hover: what the cursor is resting on (only while the mouse has moved in the last 8s)
+      if (canHover && heatLast.x >= 0 && t - heatLast.t < 8000) {
+        var under = d.elementFromPoint(heatLast.x, heatLast.y);
+        if (under && under !== d.documentElement) {
+          var nd = heatNode(under);
+          if (nd) {
+            var si = heatSel(nd.path);
+            if (si >= 0) {
+              var f = fracOf(nd.el, heatLast.x, heatLast.y);
+              var key = si + "." + Math.min(9, Math.floor(f[0] / 10)) + "." + Math.min(9, Math.floor(f[1] / 10));
+              if (heat.h[key] != null || Object.keys(heat.h).length < 60) heat.h[key] = (heat.h[key] || 0) + 1;
+            }
+          }
+        }
+      }
+      // attention: which sections are on screen (at least half of the section, or half the screen, visible)
+      var els = d.querySelectorAll(ATTN_SEL);
+      for (var i = 0; i < els.length && i < 60; i++) {
+        var r = els[i].getBoundingClientRect();
+        if (r.height < 30) continue;
+        var overlap = Math.min(r.bottom, vh) - Math.max(r.top, 0);
+        if (overlap >= Math.min(r.height, vh) * 0.5) {
+          var n2 = heatNode(els[i]); if (!n2 || n2.el !== els[i]) continue;
+          var sj = heatSel(n2.path); if (sj < 0) continue;
+          heat.a[sj] = (heat.a[sj] || 0) + 1; // 1 = half a second
+        }
+      }
+    } catch (e) {}
+  }, 500);
+  function sendHeat() {
+    try {
+      var hh = Object.keys(heat.h).map(function (k) { var p = k.split("."); return [+p[0], +p[1], +p[2], heat.h[k]]; }).sort(function (a, b) { return b[3] - a[3]; }).slice(0, 50);
+      var aa = Object.keys(heat.a).map(function (k) { return [+k, heat.a[k]]; }).filter(function (x) { return x[1] >= 2; });
+      if (!heat.c.length && !hh.length && !aa.length) return;
+      var de = d.documentElement, bd = d.body;
+      var props = {
+        v: 1, vw: w.innerWidth || 0,
+        dw: Math.max(de.scrollWidth, bd ? bd.scrollWidth : 0),
+        dh: Math.max(de.scrollHeight, bd ? bd.scrollHeight : 0),
+        s: heat.sel, c: heat.c, h: hh, a: aa,
+      };
+      while (JSON.stringify(props).length > 3600 && (props.h.length > 5 || props.c.length > 5)) {
+        if (props.h.length > 5) props.h.length = Math.ceil(props.h.length * 0.7); else props.c.length = Math.ceil(props.c.length * 0.7);
+      }
+      var e = base("event");
+      e.id = uuid(); e.pv_id = pvId; e.name = "heat"; e.props = props;
+      heatReset();
+      send([e]);
+    } catch (er) {}
+  }
+  d.addEventListener("visibilitychange", function () { if (!visible()) sendHeat(); });
+  w.addEventListener("pagehide", sendHeat);
 
   // bfcache restore → count it as a new view
   w.addEventListener("pageshow", function (e) {

@@ -123,7 +123,7 @@
     const out = [];
     const PAGE = 1000, CAP = 80000;
     for (let from = 0; from < CAP; from += PAGE) {
-      let q = sb.from("wa_events").select("*").gte("ts", fromIso);
+      let q = sb.from("wa_events").select("*").or("name.is.null,name.neq.heat").gte("ts", fromIso); // heat rows are big; the Heatmap tab loads them separately
       if (toIso) q = q.lte("ts", toIso);
       const { data, error } = await q.order("ts", { ascending: true }).range(from, from + PAGE - 1);
       if (error) throw error;
@@ -740,6 +740,7 @@
     { id: "sources", label: "Sources", short: "Sources", ico: "🧭" },
     { id: "audience", label: "Audience", short: "Audience", ico: "👥" },
     { id: "pages", label: "Pages", ico: "📄" },
+    { id: "heatmap", label: "Heatmap", short: "Heatmap", ico: "🔥" },
     { id: "actions", label: "Actions", short: "Actions", ico: "🎯" },
     { id: "health", label: "Health", ico: "🩺" },
     { id: "visits", label: "Visits", short: "Visits", ico: "🧾" },
@@ -890,6 +891,7 @@
     const notes = this.notesInRange(ser);
     this._insights = insights(A, ser);
     const T = {
+      heatmap: () => (this.heatPane ? this.heatPane() : `<div class="panel">Heatmap isn't loaded.</div>`),
       overview: () => `      <div class="kpi-grid wa-kpis">
         ${kpi("People", n0(A.visitors), delta(A.visitors, P.visitors) + ` vs prev`, "kpi--accent", spark(ser.buckets.map((b) => b.visitors), "#0526c5"), "Unique visitors. Each person counted once, even if they come back.")}
         ${kpi("Visits", n0(A.sessions), delta(A.sessions, P.sessions) + ` · ${pct(A.newVisitors, A.sessions)}% first-timers`, "", spark(ser.buckets.map((b) => b.sessions), "#0526c5"), "One trip to the site. A new visit starts after 30 minutes away.")}
@@ -1020,6 +1022,7 @@
     this.renderSessions();
     this.drawMap(A);
     this.lbQR(false);
+    if (tab === "heatmap" && this.heatPost) this.heatPost();
   };
 
   /* ---------------- session list + visitor profile ---------------- */
