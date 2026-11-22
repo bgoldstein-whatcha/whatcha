@@ -269,3 +269,9 @@ table.data.wa-tbl td.num { white-space: nowrap; }
 .hm-ign { margin: 0; padding-left: 18px; font-size: 13px; }
 .hm-small { font-size: 12px; margin: 6px 0 0; }
 @media (max-width: 1100px) { .hm-wrap { grid-template-columns: 1fr; } .hm-side { position: static; max-height: none; } }
+
+/* ---------------- store map tab ---------------- */
+.stm-ins { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.stm-ins li { background: var(--sky-pale); border-radius: 12px; padding: 12px 14px 12px 40px; font-size: 14px; line-height: 1.45; position: relative; }
+.stm-ins li::before { content: "💡"; position: absolute; left: 13px; top: 11px; }
+.hm-ign-wrap { max-height: 260px; overflow: auto; }

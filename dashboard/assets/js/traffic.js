@@ -341,6 +341,8 @@
     }).join("")}</div>${under ? `<div class="muted" style="font-size:12px;margin-top:10px">🔞 ${n0(under)} session${under > 1 ? "s" : ""} answered “Not yet” at the age gate (${pct(under, A.sessions)}%).</div>` : ""}`;
   }
 
+  WA.ui = { panel, kpi, rankTable }; // shared with plug-in tabs (storemap.js, heatmap.js)
+
   function storeSearches(A) {
     const m = new Map();
     A.evs.filter((e) => e.name === "store_locator_search").forEach((e) => {
@@ -741,6 +743,7 @@
     { id: "audience", label: "Audience", short: "Audience", ico: "👥" },
     { id: "pages", label: "Pages", ico: "📄" },
     { id: "heatmap", label: "Heatmap", short: "Heatmap", ico: "🔥" },
+    { id: "stores", label: "Store map", short: "Stores", ico: "📍" },
     { id: "actions", label: "Actions", short: "Actions", ico: "🎯" },
     { id: "health", label: "Health", ico: "🩺" },
     { id: "visits", label: "Visits", short: "Visits", ico: "🧾" },
@@ -891,6 +894,7 @@
     const notes = this.notesInRange(ser);
     this._insights = insights(A, ser);
     const T = {
+      stores: () => (this.storePane ? this.storePane(A) : `<div class="panel">Store map insights aren't loaded.</div>`),
       heatmap: () => (this.heatPane ? this.heatPane() : `<div class="panel">Heatmap isn't loaded.</div>`),
       overview: () => `      <div class="kpi-grid wa-kpis">
         ${kpi("People", n0(A.visitors), delta(A.visitors, P.visitors) + ` vs prev`, "kpi--accent", spark(ser.buckets.map((b) => b.visitors), "#0526c5"), "Unique visitors. Each person counted once, even if they come back.")}

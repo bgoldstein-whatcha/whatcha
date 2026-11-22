@@ -283,7 +283,7 @@ var SUPABASE_KEY = 'sb_publishable_-_LLFYYSC5ctBmDL27gtdQ_P9343TDy';
 
 function mapRows(rows) {
   return (rows || []).filter(function (r) { return r.name && r.address; }).map(function (r) {
-    return { name: r.name, address: r.address, lat: r.lat != null ? +r.lat : null, lng: r.lng != null ? +r.lng : null };
+    return { name: r.name, address: r.address, city: r.city || '', state: r.state || '', lat: r.lat != null ? +r.lat : null, lng: r.lng != null ? +r.lng : null };
   });
 }
 function fetchStores() {
@@ -316,8 +316,15 @@ function directionsUrl(s) {
   }
   return 'https://www.google.com/maps/dir/?api=1&destination=' + q;
 }
-function openDirections(i) {
-  if (typeof gtag === 'function') gtag('event', 'store_directions');
+// Analytics: which store, and how they got there. (gtag events are forwarded to the HQ dashboard by assets/w.js.)
+function trackStore(name, i, via) {
+  var s = STORES[i]; if (!s || typeof gtag !== 'function') return;
+  var p = { store: s.name, city: s.city || '', state: s.state || '', via: via };
+  if (name === 'store_directions') p.maps = /maps\.apple\.com/.test(directionsUrl(s)) ? 'apple' : 'google';
+  gtag('event', name, p);
+}
+function openDirections(i, via) {
+  trackStore('store_directions', i, via || 'card');
   window.open(directionsUrl(STORES[i]), '_blank', 'noopener');
 }
 
@@ -332,14 +339,15 @@ function buildMarkers() {
     if (s._lat == null) { markers.push(null); return; }
     var m = L.marker([s._lat, s._lng], { icon: pinIcon() }).addTo(map);
     m.bindPopup('<div class="store-popup"><h3>' + esc(s.name) + '</h3><p>' + esc(s.address) + '</p>' +
-      '<a class="dir-btn" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>');
+      '<a class="dir-btn" data-dir="' + i + '" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>');
     m.on('click', function () { selectStore(i, false); });
     markers.push(m);
   });
 }
 
 function selectStore(i, fromList) {
-  if (i === activeIdx && fromList) { openDirections(i); return; }   // second tap → navigate
+  if (i === activeIdx && fromList) { openDirections(i, 'card'); return; }   // second tap → navigate
+  if (i !== activeIdx) trackStore('store_select', i, fromList ? 'list' : 'pin');
   activeIdx = i;
   var s = STORES[i];
   if (markers[i]) markers[i].openPopup();
@@ -369,7 +377,7 @@ function renderList() {
       '<div class="store-name">' + esc(s.name) + '</div>' +
       '<div class="store-address">' + esc(s.address) + '</div>' +
       (known ? '<div class="store-distance">' + s._dist.toFixed(1) + ' mi ' + (refPoint ? 'from your search' : 'away') + '</div>' : '') +
-      '<a class="store-dir" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>';
+      '<a class="store-dir" data-dir="' + i + '" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>';
   }).join('');
   document.getElementById('count').textContent = vis.length;
   var none = !vis.length;
@@ -379,6 +387,10 @@ function renderList() {
   document.getElementById('no-results').style.display = none ? 'block' : 'none';
 }
 
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[data-dir]');
+  if (a) trackStore('store_directions', +a.getAttribute('data-dir'), a.classList.contains('dir-btn') ? 'popup' : 'button');
+}, true);
 document.getElementById('store-list').addEventListener('click', function (e) {
   if (e.target.closest('.store-dir')) return;               // the button is a normal link
   var card = e.target.closest('.store-card'); if (!card) return;
