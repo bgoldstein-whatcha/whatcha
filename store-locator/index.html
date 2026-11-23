@@ -224,15 +224,15 @@
   <noscript>
     <p style="max-width:640px;margin:1.5rem auto;padding-inline:1rem;color:var(--ink);font-size:0.95rem;">
       Whatcha, the spirits-based, ready-to-drink cocktail pouch (also called a boozy juice pouch, vodka juice pouch, or alcohol pouch), is in stores now in
-      Connecticut and New Jersey, with store details coming soon. Search above by zip code for the closest spot carrying Spiked Peach Lemonade or Spiked Tropical Punch.
+      Connecticut and New Jersey. Search above by zip code for the closest spot carrying Spiked Peach Lemonade or Spiked Tropical Punch.
     </p>
   </noscript>
 
   <div id="locator-body">
     <div id="sidebar">
-      <div id="sidebar-header">Locations (<span id="count">0</span>)</div>
+      <div id="sidebar-header">Locations</div>
       <div id="loading-state">Loading locations…</div>
-      <div id="no-results">Whatcha is in stores now in Connecticut and New Jersey. Store details coming soon.</div>
+      <div id="no-results">Loading stores…</div>
       <div id="store-list"></div>
     </div>
     <div id="map"></div>
@@ -379,7 +379,6 @@ function renderList() {
       (known ? '<div class="store-distance">' + s._dist.toFixed(1) + ' mi ' + (refPoint ? 'from your search' : 'away') + '</div>' : '') +
       '<a class="store-dir" data-dir="' + i + '" href="' + esc(directionsUrl(s)) + '" target="_blank" rel="noopener">Get directions &rarr;</a></div>';
   }).join('');
-  document.getElementById('count').textContent = vis.length;
   var none = !vis.length;
   document.getElementById('no-results').textContent = STORES.length
     ? 'No Whatcha stores in this part of the map. Zoom out or drag the map to find the nearest ones.'
