@@ -21,232 +21,148 @@
 <link rel="preload" href="../assets/fonts/nunito-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="../assets/style.css" />
 <style>
-  .wla-hero { padding-block: clamp(2.5rem, 6vw, 4rem); position: relative; overflow: hidden; }
+  /* ---------- shared rhythm ----------
+     One vertical scale for the whole page so nothing crowds:
+     section padding, a heading block, then a 1.75rem gap before controls.
+     Hard-shadow buttons need ~1rem of clearance below them. */
+  .wla-pad { padding-block: clamp(3rem, 7vw, 5rem); }
+  .wla-head { max-width: 560px; margin: 0 auto 1.75rem; text-align: center; }
+  .wla-head h2 { margin: 0; text-wrap: balance; }
+  .wla-head p { margin: 0.5rem 0 0; text-wrap: balance; }
+  .wla-kicker { display: block; font-family: var(--font-ui); letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.8rem; font-weight: 700; color: var(--coral-deep); margin-bottom: 0.6rem; }
+  .wla-btn-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.1rem 1rem; }
+  .btn--ghost { background: var(--cream); color: var(--navy); }
+  .wla-note { margin: 1.5rem auto 0; font-size: 0.95rem; text-align: center; }
 
+  /* ---------- 1. hero ---------- */
+  .wla-hero { padding-block: clamp(2.25rem, 6vw, 4rem) clamp(3rem, 7vw, 4.5rem); position: relative; overflow: hidden; }
+  .wla-headline-row { display: flex; align-items: center; justify-content: center; gap: clamp(1rem, 4vw, 3rem); position: relative; z-index: 2; }
   .wla-headline {
-    font-family: var(--font-display);
-    font-weight: 800;
-    color: var(--yellow);
-    font-size: clamp(2.5rem, 7vw, 5rem);
-    line-height: 0.95;
-    margin-bottom: 0.75rem;
-    position: relative;
-    z-index: 2;
-    transform: translateX(-0.06em);
+    font-family: var(--font-display); font-weight: 800; color: var(--yellow);
+    font-size: clamp(2.5rem, 7vw, 5rem); line-height: 0.95; margin: 0;
+    position: relative; z-index: 2; transform: translateX(-0.06em);
   }
-  .wla-headline__shadow {
-    position: absolute;
-    inset: 0;
-    font-family: var(--font-display-shadow);
-    color: var(--navy);
-    z-index: 0;
-  }
-  .wla-headline__face {
-    position: relative;
-    z-index: 1;
-  }
-
-  .wla-sub {
-    font-family: var(--font-ui);
-    letter-spacing: 0.07em;
-    font-weight: 700;
-    color: var(--navy);
-    font-size: clamp(1.1rem, 2.6vw, 1.35rem);
-    margin-bottom: 2rem;
-    position: relative;
-    z-index: 2;
-  }
-
-  /* ---------- story flip card ---------- */
-  .wla-flip {
-    position: relative;
-    z-index: 2;
-    max-width: 620px;
-    margin-inline: auto;
-    margin-top: 1rem;
-    perspective: 1600px;
-  }
-  .wla-flip__inner {
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
-  }
-  .wla-flip.is-flipped .wla-flip__inner { transform: rotateY(180deg); }
-
-  .wla-flip__front,
-  .wla-flip__back {
-    border: 4px solid var(--navy);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-hard);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-  }
-  .wla-flip__front {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    background: var(--yellow);
-    padding: clamp(2rem, 5vw, 3rem);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    cursor: pointer;
-    text-align: center;
-    font: inherit;
-    transition: transform 0.15s ease;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .wla-flip__front:hover { transform: translate(-2px, -2px); }
-  }
-  .wla-flip__prompt {
-    font-family: var(--font-ui);
-    letter-spacing: 0.04em;
-    font-weight: 700;
-    font-size: clamp(1.3rem, 3vw, 1.7rem);
-    color: var(--navy);
-    margin: 0;
-  }
-  .wla-flip__hint {
-    font-family: "Nunito Sans", sans-serif;
-    font-size: 0.85rem;
-    color: var(--navy);
-    opacity: 0.7;
-    margin: 0;
-  }
-
-  .wla-flip__back {
-    position: relative;
-    background: var(--teal-pale);
-    padding: clamp(1.75rem, 4vw, 2.5rem);
-    text-align: left;
-    transform: rotateY(180deg);
-  }
-  .wla-flip__back-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    margin-top: 0.5rem;
-  }
-  .wla-flip__flipback {
-    background: none;
-    border: none;
-    font-family: var(--font-ui);
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.06em;
-    color: var(--navy);
-    opacity: 0.65;
-    cursor: pointer;
-    padding: 0;
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .wla-flip__flipback:hover { opacity: 1; }
-  }
-
-  .wla-story-card__eyebrow {
-    font-family: var(--font-ui);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    font-size: 0.78rem;
-    color: var(--coral-deep);
-    font-weight: 700;
-    margin-bottom: 0.6rem;
-  }
-  .wla-flip__back p { color: var(--ink); font-size: var(--fs-body-lg); line-height: 1.6; margin-bottom: 1rem; }
-  .wla-flip__back a.wla-story-link {
-    font-family: var(--font-ui);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--navy);
-    text-decoration: underline;
-  }
-
-  /* ---------- sign-off (signature + typed name + title) ---------- */
-  .signoff { margin-bottom: 0.75rem; }
-  .signoff__img { width: 70px; height: auto; margin-bottom: 0.2rem; }
-  .signoff__name { font-family: var(--font-ui); letter-spacing: 0.04em; font-weight: 700; font-size: 1rem; color: var(--navy); margin: 0; }
-  .signoff__title { font-family: "Nunito Sans", sans-serif; font-weight: 600; font-size: var(--fs-small); color: var(--ink); opacity: 0.7; margin: 0.1rem 0 0; }
-
-  /* ---------- pouches (static — no motion, no drop shadow) ---------- */
-  .wla-headline-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: clamp(1rem, 4vw, 3rem);
-    position: relative;
-    z-index: 2;
-  }
-  .wla-pouch {
-    width: clamp(70px, 9vw, 120px);
-    z-index: 1;
-    flex: none;
-  }
+  .wla-headline__shadow { position: absolute; inset: 0; font-family: var(--font-display-shadow); color: var(--navy); z-index: 0; }
+  .wla-headline__face { position: relative; z-index: 1; }
+  .wla-pouch-wrap { position: relative; flex: none; }
+  .wla-pouch { width: clamp(70px, 9vw, 120px); display: block; transition: transform 0.3s ease, opacity 0.3s ease; }
   .wla-pouch--1 { transform: rotate(-10deg); }
   .wla-pouch--2 { transform: rotate(10deg); }
+  .is-flavor-tp .wla-pouch--2, .is-flavor-pl .wla-pouch--1 { opacity: 0.35; }
+  .is-flavor-tp .wla-pouch--1 { transform: rotate(-10deg) scale(1.12); }
+  .is-flavor-pl .wla-pouch--2 { transform: rotate(10deg) scale(1.12); }
+
+  /* the "scan certified" sticker slapped on the right pouch */
+  .wla-sticker {
+    position: absolute; right: -18px; bottom: -8px; z-index: 3;
+    width: 66px; height: 66px; border-radius: 50%;
+    background: var(--coral); color: var(--cream); border: 3px solid var(--navy);
+    box-shadow: 3px 3px 0 var(--navy);
+    display: grid; place-items: center; text-align: center;
+    font-family: var(--font-ui); font-weight: 700; letter-spacing: 0.04em; font-size: 0.62rem; line-height: 1.05;
+    transform: rotate(14deg);
+  }
+
+  .wla-sub { font-family: var(--font-ui); letter-spacing: 0.06em; font-weight: 700; color: var(--navy); font-size: clamp(1.2rem, 2.8vw, 1.5rem); margin: 1.25rem auto 2rem; max-width: 26ch; text-wrap: balance; position: relative; z-index: 2; }
+  .wla-hero .wla-btn-row { position: relative; z-index: 2; }
 
   @media (max-width: 700px) {
     .sparkle { display: none; }
-    .wla-headline-row {
-      flex-wrap: wrap;
-      gap: 1.25rem;
-      margin-bottom: 0.5rem;
-    }
-    .wla-headline-row .wla-headline {
-      order: 2;
-      flex-basis: 100%;
-    }
-    .wla-pouch {
-      order: 1;
-      width: clamp(52px, 16vw, 80px);
-    }
+    .wla-headline-row { flex-wrap: wrap; gap: 1.5rem 1.75rem; }
+    .wla-headline-row .wla-headline { order: 2; flex-basis: 100%; }
+    .wla-pouch-wrap { order: 1; }
+    .wla-pouch { width: clamp(56px, 16vw, 80px); }
     .wla-pouch--1 { transform: rotate(-8deg); }
     .wla-pouch--2 { transform: rotate(8deg); }
-    .wla-flip__back p { font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.75rem; }
-    .signoff__img { width: 56px; }
-    .signoff { margin-bottom: 0.5rem; }
+    .wla-sticker { width: 58px; height: 58px; font-size: 0.58rem; right: -26px; bottom: -6px; }
+    .wla-hero .wla-btn-row .btn { flex: 1 1 100%; }
   }
 
-  /* ---------- flavors module ---------- */
-  .wla-flavors { position: relative; overflow: hidden; }
-  .wla-flavors .flavors__head { margin-bottom: clamp(2rem, 5vw, 3rem); }
-  .wla-flavors .flavors__head .fs-body-lg { margin-top: 0.5rem; text-wrap: balance; }
-
-  /* ---------- community section ---------- */
+  /* ---------- 2. get your pouch famous ---------- */
   .wla-community { background: var(--teal); }
-  .wla-community h2 { color: var(--navy); }
-  .wla-community .fs-body-lg { color: var(--navy); max-width: 520px; margin-inline: auto; }
-
-  .marquee.marquee--social {
-    margin-top: 2rem;
-    background: var(--navy);
-    border-color: var(--navy-deep);
-    padding-block: 1.15rem;
-    display: block;
-    text-decoration: none;
-    border-radius: var(--radius-sm);
-    max-width: 620px;
-    margin-inline: auto;
+  .wla-community h2, .wla-community .wla-head p, .wla-community .wla-note { color: var(--navy); }
+  .wla-community .wla-kicker { color: var(--navy); }
+  .wla-steps { list-style: none; padding: 0; margin: 0 auto 2rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.9rem; max-width: 560px; }
+  .wla-steps li {
+    background: var(--cream); color: var(--navy); border: 3px solid var(--navy); border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-hard-sm); padding: 0.85rem 0.5rem 0.75rem; text-align: center;
+    font-family: var(--font-ui); letter-spacing: 0.05em; font-weight: 700; font-size: clamp(0.9rem, 2.6vw, 1.05rem); line-height: 1.15;
   }
-  .marquee--social .marquee__word {
-    color: var(--yellow);
-    font-size: clamp(1.1rem, 0.9vw + 1rem, 1.4rem);
-    letter-spacing: 0.08em;
-  }
-  .marquee--social .marquee__star { color: var(--yellow); font-size: clamp(1rem, 0.6vw + 0.8rem, 1.2rem); }
-  @media (hover: hover) and (pointer: fine) {
-    .marquee--social:hover .marquee__word { color: var(--cream); }
-  }
+  .wla-steps li:nth-child(1) { transform: rotate(-2.5deg); }
+  .wla-steps li:nth-child(2) { transform: rotate(1.5deg); background: var(--yellow); }
+  .wla-steps li:nth-child(3) { transform: rotate(-1deg); }
+  .wla-steps b { display: block; font-family: var(--font-display); font-size: 1.7rem; line-height: 1; color: var(--coral-deep); margin-bottom: 0.3rem; }
+  .wla-copy-status { min-height: 1.4em; margin: 0.9rem 0 0; text-align: center; color: var(--navy); font-weight: 700; font-size: 0.95rem; }
+  .wla-community .wla-ig { margin-top: 1.5rem; }
 
-  .wla-tag-note { margin-top: 1.25rem; color: var(--navy); font-size: 0.95rem; }
+  /* ---------- 3. the hang report (polls on a receipt) ---------- */
+  .wla-report {
+    max-width: 560px; margin: 0 auto; background: var(--cream);
+    border: 4px solid var(--navy); border-radius: var(--radius); box-shadow: var(--shadow-hard);
+    padding: clamp(1.5rem, 4vw, 2.25rem) clamp(1.1rem, 4vw, 2.25rem);
+    position: relative;
+  }
+  .wla-report__top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding-bottom: 1rem; border-bottom: 3px dashed var(--navy); }
+  .wla-report__title { font-family: var(--font-display); color: var(--navy); font-size: clamp(1.5rem, 4.5vw, 2rem); line-height: 1; margin: 0; }
+  .wla-report__count { font-family: var(--font-ui); font-weight: 700; letter-spacing: 0.08em; font-size: 0.8rem; color: var(--coral-deep); white-space: nowrap; }
+  .wla-poll { padding-block: 1.4rem; border-bottom: 3px dashed rgba(5, 38, 197, 0.35); text-align: left; }
+  .wla-poll:last-of-type { border-bottom: 0; padding-bottom: 0.5rem; }
+  .wla-poll h3 { font-family: var(--font-ui); letter-spacing: 0.05em; color: var(--navy); font-size: clamp(1.05rem, 3vw, 1.2rem); margin: 0 0 0.9rem; }
+  .wla-poll h3 small { display: block; font-family: "Nunito Sans", sans-serif; letter-spacing: 0; font-weight: 600; font-size: 0.85rem; color: var(--ink); opacity: 0.7; margin-top: 0.2rem; }
+  .wla-poll__opts { display: flex; flex-wrap: wrap; gap: 0.9rem 0.75rem; }
+  .wla-chip {
+    font-family: var(--font-ui); letter-spacing: 0.05em; font-weight: 700; font-size: 1rem;
+    background: var(--cream); color: var(--navy); border: 3px solid var(--navy); border-radius: 999px;
+    padding: 0.6em 1.1em; min-height: 44px; cursor: pointer; box-shadow: var(--shadow-hard-sm);
+    transition: transform 0.15s ease, background 0.15s ease, opacity 0.2s ease;
+  }
+  @media (hover: hover) and (pointer: fine) { .wla-chip:hover { transform: translate(-2px, -2px); } }
+  .wla-chip:active { transform: translate(0, 0); }
+  .wla-chip:focus-visible { outline: 3px solid var(--coral); outline-offset: 3px; }
+  .wla-chip.is-picked { background: var(--yellow); animation: wlaPop 0.35s ease; }
+  .wla-poll.is-done .wla-chip:not(.is-picked) { opacity: 0.45; }
+  .wla-poll__thanks { min-height: 1.4em; margin: 0.8rem 0 0; font-weight: 700; color: var(--coral-deep); font-size: 0.95rem; }
+  .wla-stamp {
+    margin: 1.25rem auto 0; width: max-content; max-width: 100%;
+    font-family: var(--font-display); font-size: clamp(1.1rem, 3.5vw, 1.4rem); letter-spacing: 0.04em; color: var(--coral-deep);
+    border: 4px solid var(--coral-deep); border-radius: 12px; padding: 0.35em 0.8em; transform: rotate(-4deg);
+    opacity: 0; visibility: hidden;
+  }
+  .wla-report.is-filed .wla-stamp { opacity: 1; visibility: visible; animation: wlaStamp 0.4s ease; }
+  @keyframes wlaPop { 0% { transform: scale(1); } 45% { transform: scale(1.1) rotate(-2deg); } 100% { transform: scale(1); } }
+  @keyframes wlaStamp { 0% { transform: rotate(-4deg) scale(1.6); opacity: 0; } 100% { transform: rotate(-4deg) scale(1); opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .wla-chip.is-picked, .wla-report.is-filed .wla-stamp { animation: none; } }
 
-  /* ---------- find more whatcha ---------- */
-  .wla-find { background: var(--coral); text-align: center; }
-  .wla-find h2 { color: var(--navy); margin-bottom: 0.85rem; }
-  .wla-find p { color: var(--navy); max-width: 480px; margin: 0 auto 2rem; opacity: 0.85; }
+  /* ---------- 4. the other flavor + where to get more ---------- */
+  .wla-find { background: var(--coral); }
+  .wla-find h2, .wla-find .wla-head p { color: var(--navy); }
+  .wla-mini-grid { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; margin: 0 auto 2.25rem; }
+  .wla-mini {
+    background: var(--cream); border: 4px solid var(--navy); border-radius: var(--radius); box-shadow: var(--shadow-hard);
+    padding: 1.25rem; width: min(100%, 320px);
+    display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.25rem 1rem; text-align: left;
+  }
+  .wla-mini img { grid-row: span 3; width: 74px; height: auto; transform: rotate(-6deg); }
+  .wla-mini h3 { color: var(--navy); font-size: 1.25rem; margin: 0; }
+  .wla-mini p { color: var(--ink); font-size: 0.92rem; margin: 0; line-height: 1.4; }
+  .wla-mini__tag { font-family: var(--font-ui); letter-spacing: 0.08em; font-weight: 700; font-size: 0.72rem; text-transform: uppercase; color: var(--coral-deep); }
+  .is-flavor-tp .wla-mini--tp, .is-flavor-pl .wla-mini--pl { display: none; }
+  .wla-mini__tag { display: none; }
+  .is-flavor-tp .wla-mini__tag, .is-flavor-pl .wla-mini__tag { display: block; }
+  .wla-find .wla-btn-row { margin-bottom: 0; }
+  .wla-find .wla-note { color: var(--navy); opacity: 0.85; font-size: 0.85rem; margin-top: 1.75rem; }
+
+  /* ---------- 5. email ---------- */
+  .wla-signup { background: var(--sky-pale); color: var(--navy); }
+  .wla-signup h2, .wla-signup .wla-head p { color: var(--navy); }
+  .wla-signup .signup__form { margin: 0 auto; }
+  .wla-signup .form-status { color: var(--navy); margin: 1rem 0 0; text-align: center; min-height: 1.4em; }
+
+  /* ---------- 6. sign-off ---------- */
+  .wla-outro { text-align: center; padding-block: clamp(3rem, 7vw, 4.5rem); }
+  .wla-outro h2 { margin: 0 0 0.75rem; text-wrap: balance; }
+  .wla-outro p { max-width: 480px; margin: 0 auto 1rem; color: var(--ink); text-wrap: balance; }
+  .wla-outro a { font-family: var(--font-ui); font-weight: 700; letter-spacing: 0.06em; color: var(--navy); text-decoration: underline; text-underline-offset: 3px; }
 </style>
 <!-- Whatcha first-party analytics → HQ dashboard -->
 <script defer src="/assets/w.js"></script>
@@ -285,6 +201,7 @@
 </header>
 
 <main>
+  <!-- 1. HERO: the payoff for scanning -->
   <section class="wla-hero sparkle-field text-center">
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:22px; --sparkle-color:var(--yellow); top:10%; left:14%;"></span>
     <span class="sparkle" aria-hidden="true" style="--sparkle-size:16px; --sparkle-color:var(--sky); top:16%; right:16%;"></span>
@@ -293,109 +210,155 @@
 
     <div class="container">
       <div class="wla-headline-row">
-        <img decoding="async" width="907" height="1500" class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.webp" srcset="../assets/images/pouches/tropical-punch-540.webp 1x, ../assets/images/pouches/tropical-punch.webp 2x" alt="" aria-hidden="true" />
+        <span class="wla-pouch-wrap">
+          <img decoding="async" width="907" height="1500" class="wla-pouch wla-pouch--1" src="../assets/images/pouches/tropical-punch.webp" srcset="../assets/images/pouches/tropical-punch-540.webp 1x, ../assets/images/pouches/tropical-punch.webp 2x" alt="" aria-hidden="true" />
+        </span>
         <h1 class="wla-headline">
           <span class="wla-headline__shadow" aria-hidden="true">WHATCHA<br>LOOKIN AT?!</span>
           <span class="wla-headline__face">WHATCHA<br>LOOKIN AT?!</span>
         </h1>
-        <img decoding="async" width="905" height="1500" class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.webp" srcset="../assets/images/pouches/peach-lemonade-540.webp 1x, ../assets/images/pouches/peach-lemonade.webp 2x" alt="" aria-hidden="true" />
+        <span class="wla-pouch-wrap">
+          <img decoding="async" width="905" height="1500" class="wla-pouch wla-pouch--2" src="../assets/images/pouches/peach-lemonade.webp" srcset="../assets/images/pouches/peach-lemonade-540.webp 1x, ../assets/images/pouches/peach-lemonade.webp 2x" alt="" aria-hidden="true" />
+          <span class="wla-sticker" aria-hidden="true">SCAN<br>CERTIFIED</span>
+        </span>
       </div>
-      <p class="wla-sub">Cheers to what YOU'RE drinking!</p>
-
-      <div class="wla-flip" id="flip-card">
-        <div class="wla-flip__inner">
-          <div class="wla-flip__back">
-            <p class="wla-story-card__eyebrow">The Story</p>
-            <p>We noticed people were already mixing cocktails into pouches for beach days, parks and concerts. So we made it official: a real spirits-based, ready-to-drink cocktail pouch, built for the format our generation grew up loving. Basically, the alcohol pouch you wish existed sooner.</p>
-            <div class="signoff">
-              <img decoding="async" loading="lazy" width="600" height="573" class="signoff__img" src="../assets/images/logo/ben-signature.webp" alt="Ben's signature" />
-              <p class="signoff__name">Ben</p>
-              <p class="signoff__title">Founder</p>
-            </div>
-            <div class="wla-flip__back-row">
-              <a href="../about.html" class="wla-story-link">Read our story &rarr;</a>
-              <button type="button" class="wla-flip__flipback">&#8635; Flip back</button>
-            </div>
-          </div>
-          <button type="button" class="wla-flip__front">
-            <p class="wla-flip__prompt">So, what's Whatcha?</p>
-            <p class="wla-flip__hint">(tap to find out)</p>
-          </button>
-        </div>
+      <p class="wla-sub" data-wla-sub>You scanned a pouch mid-hang. Respect.</p>
+      <div class="wla-btn-row">
+        <a href="#tag-us" class="btn">Make your pouch famous &darr;</a>
+        <a href="/store-locator" class="btn btn--ghost">Find more near me</a>
       </div>
     </div>
   </section>
 
+  <!-- 2. GET YOUR POUCH FAMOUS: the one thing we most want them to do -->
   <div class="section-divider" aria-hidden="true"></div>
-  <section id="flavors" class="flavors wla-flavors section-pad sparkle-field">
-    <span class="sparkle" aria-hidden="true" style="--sparkle-size:18px; --sparkle-color:var(--coral); top:6%; right:8%;"></span>
-    <span class="sparkle" aria-hidden="true" style="--sparkle-size:14px; --sparkle-color:var(--sky); bottom:8%; left:7%;"></span>
+  <section class="wla-community wla-pad" id="tag-us">
     <div class="container">
-      <div class="text-center flavors__head">
-        <h2>Can't pick just one?</h2>
-        <p class="fs-body-lg">Good news, you don't have to. Try them both.</p>
+      <div class="wla-head">
+        <span class="wla-kicker">Main character energy</span>
+        <h2>Get your pouch famous</h2>
+        <p class="fs-body-lg">Snap it in the wild. Tag us. We repost the good ones.</p>
       </div>
-
-      <div class="flavor-grid">
-        <article class="flavor-card flavor-card--punch">
-          <img decoding="async" loading="lazy" src="../assets/images/pouches/tropical-punch.webp" srcset="../assets/images/pouches/tropical-punch-540.webp 1x, ../assets/images/pouches/tropical-punch.webp 2x" alt="Whatcha Spiked Tropical Punch, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
-          <div class="flavor-card__body">
-            <h3>Tropical Punch</h3>
-            <p>Mango, passionfruit &amp; cherry, blended with vodka. Bright, juicy, no bubbles required.</p>
-            <ul class="flavor-chips">
-              <li>10% ALC/VOL</li>
-              <li>3g Added Sugar</li>
-              <li>6.7 FL OZ</li>
-              <li>Gluten Free</li>
-            </ul>
-          </div>
-        </article>
-
-        <article class="flavor-card flavor-card--peach">
-          <img decoding="async" loading="lazy" src="../assets/images/pouches/peach-lemonade.webp" srcset="../assets/images/pouches/peach-lemonade-540.webp 1x, ../assets/images/pouches/peach-lemonade.webp 2x" alt="Whatcha Spiked Peach Lemonade, a ready-to-drink alcohol pouch cocktail" width="260" height="423" />
-          <div class="flavor-card__body">
-            <h3>Peach Lemonade</h3>
-            <p>Sun-ripe peach, tart lemonade, and a little bit of trouble. Built for beach days and backyards.</p>
-            <ul class="flavor-chips">
-              <li>10% ALC/VOL</li>
-              <li>3g Added Sugar</li>
-              <li>6.7 FL OZ</li>
-              <li>Gluten Free</li>
-            </ul>
-          </div>
-        </article>
+      <ol class="wla-steps">
+        <li><b>1</b>Snap it</li>
+        <li><b>2</b>Tag us</li>
+        <li><b>3</b>Get famous</li>
+      </ol>
+      <div class="wla-btn-row">
+        <a class="btn btn--navy" href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener">Open @drinkwhatcha</a>
+        <button type="button" class="btn btn--ghost" data-wla-copy="@drinkwhatcha">Copy the tag</button>
       </div>
-    </div>
-  </section>
-
-  <div class="section-divider" aria-hidden="true"></div>
-  <section class="wla-community section-pad text-center">
-    <div class="container">
-      <h2>Whatcha in the wild</h2>
-      <p class="fs-body-lg">Show us how you Squeeze the Day</p>
-
-      <a class="marquee marquee--social" href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener" aria-label="Follow Whatcha on Instagram, @drinkwhatcha">
-        <div class="marquee__track" data-marquee>
-          <span class="marquee__star">✦</span>
-          <span class="marquee__word">Follow @drinkwhatcha</span>
-        </div>
-      </a>
+      <p class="wla-copy-status" data-wla-copy-status role="status"></p>
       <div class="wla-ig" id="ig-feed" data-feed="https://feeds.behold.so/G3JYFDgW7Fhh98DNzlR3" aria-live="polite">
         <div class="wla-ig__grid" id="ig-grid">
           <span class="wla-ig__ph"></span><span class="wla-ig__ph"></span><span class="wla-ig__ph"></span><span class="wla-ig__ph"></span>
         </div>
-        <a class="btn wla-ig__more" href="https://www.instagram.com/drinkwhatcha" target="_blank" rel="noopener">See more on Instagram</a>
       </div>
-      <p class="wla-tag-note">Tag @drinkwhatcha on Instagram or TikTok for a chance to get featured.</p>
+      <p class="wla-note">@drinkwhatcha on Instagram or TikTok.</p>
     </div>
   </section>
 
+  <!-- 3. THE HANG REPORT: fun for them, consumer research for us -->
   <div class="section-divider" aria-hidden="true"></div>
-  <section class="wla-find section-pad">
+  <section class="wla-taps wla-pad">
     <div class="container">
-      <h2>Find more Whatcha</h2>
-      <p>More flavors, more stops, more days worth squeezing. See where Whatcha's landing next.</p>
-      <a href="/store-locator" class="btn">Where's Whatcha?</a>
+      <div class="wla-head">
+        <span class="wla-kicker">Three taps, tops</span>
+        <h2>File your hang report</h2>
+      </div>
+      <div class="wla-report" data-wla-report>
+        <div class="wla-report__top">
+          <p class="wla-report__title">Dept. of the Hang</p>
+          <span class="wla-report__count" data-wla-count>0 / 3 FILED</span>
+        </div>
+
+        <div class="wla-poll" data-wla-poll="flavor_in_hand" data-wla-flavor-poll>
+          <h3>Pouch in hand<small>Which one'd you grab?</small></h3>
+          <div class="wla-poll__opts">
+            <button type="button" class="wla-chip" data-value="tropical_punch">Tropical Punch</button>
+            <button type="button" class="wla-chip" data-value="peach_lemonade">Peach Lemonade</button>
+          </div>
+          <p class="wla-poll__thanks" role="status"></p>
+        </div>
+
+        <div class="wla-poll" data-wla-poll="rating">
+          <h3>Vibe check<small>Be honest. We can take it.</small></h3>
+          <div class="wla-poll__opts">
+            <button type="button" class="wla-chip" data-value="obsessed">Obsessed</button>
+            <button type="button" class="wla-chip" data-value="into_it">Into it</button>
+            <button type="button" class="wla-chip" data-value="its_fine">It's fine</button>
+            <button type="button" class="wla-chip" data-value="not_for_me">Not for me</button>
+          </div>
+          <p class="wla-poll__thanks" role="status"></p>
+        </div>
+
+        <div class="wla-poll" data-wla-poll="next_flavor_name">
+          <h3>Name flavor #3<small>It's cherry lime. You pick what we call it.</small></h3>
+          <div class="wla-poll__opts">
+            <button type="button" class="wla-chip" data-value="cherry_limeade">Cherry Limeade</button>
+            <button type="button" class="wla-chip" data-value="cherry_lime">Cherry Lime</button>
+          </div>
+          <p class="wla-poll__thanks" role="status"></p>
+        </div>
+
+        <p class="wla-stamp" aria-hidden="true">REPORT FILED &#10003;</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. THE OTHER FLAVOR + WHERE TO GET MORE -->
+  <div class="section-divider" aria-hidden="true"></div>
+  <section class="wla-find wla-pad">
+    <div class="container">
+      <div class="wla-head">
+        <h2 data-wla-find-title>Tried both yet?</h2>
+        <p data-wla-find-copy>Two flavors, zero bubbles. If you've only had one, you're halfway there.</p>
+      </div>
+      <div class="wla-mini-grid">
+        <article class="wla-mini wla-mini--tp">
+          <img decoding="async" loading="lazy" src="../assets/images/pouches/tropical-punch-540.webp" alt="Whatcha Spiked Tropical Punch pouch" width="74" height="122" />
+          <span class="wla-mini__tag">Its other half</span>
+          <h3>Tropical Punch</h3>
+          <p>Mango, passionfruit &amp; cherry, blended with vodka.</p>
+        </article>
+        <article class="wla-mini wla-mini--pl">
+          <img decoding="async" loading="lazy" src="../assets/images/pouches/peach-lemonade-540.webp" alt="Whatcha Spiked Peach Lemonade pouch" width="74" height="122" />
+          <span class="wla-mini__tag">Its other half</span>
+          <h3>Peach Lemonade</h3>
+          <p>Sun-ripe peach, tart lemonade, a little bit of trouble.</p>
+        </article>
+      </div>
+      <div class="wla-btn-row">
+        <a href="/store-locator" class="btn">Where's Whatcha?</a>
+      </div>
+      <p class="wla-note">10% ALC/VOL &middot; 3g added sugar &middot; Gluten free</p>
+    </div>
+  </section>
+
+  <!-- 5. EMAIL: warmest lead we'll ever get -->
+  <div class="section-divider" aria-hidden="true"></div>
+  <section class="wla-signup wla-pad">
+    <div class="container">
+      <div class="wla-head">
+        <h2>Whatcha waiting for?</h2>
+        <p class="fs-body-lg">First dibs on flavor #3 and where we're landing next. No spam, just pouches.</p>
+      </div>
+      <!-- Same Google Form as the homepage: "Whatcha Email Signup" — Email question is entry.8363699 -->
+      <form id="wla-signup-form" class="signup__form" data-form data-form-google data-form-endpoint="https://docs.google.com/forms/d/e/1FAIpQLSeI0xqyaXX0hDABbnzYI_C7A40GSWJ8K_96BPOhSuW8YY767w/formResponse" aria-label="Whatcha Lookin At email signup">
+        <label for="wla-signup-email" class="visually-hidden">Enter your email</label>
+        <input id="wla-signup-email" type="email" name="entry.8363699" placeholder="Your email..." required />
+        <button type="submit" class="btn">I'm in</button>
+      </form>
+      <p class="form-status" data-form-status role="status"></p>
+    </div>
+  </section>
+
+  <!-- 6. SIGN-OFF -->
+  <section class="wla-outro">
+    <div class="container">
+      <h2>Okay. Back to the hang.</h2>
+      <p>Fun fact: people were pouring cocktails into pouches long before us. We just made it official.</p>
+      <a href="../about.html">Read our story &rarr;</a>
     </div>
   </section>
 </main>
@@ -446,13 +409,100 @@
 
 <script src="../assets/main.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-  var flip = document.getElementById('flip-card');
-  var front = flip.querySelector('.wla-flip__front');
-  var flipBack = flip.querySelector('.wla-flip__flipback');
-  front.addEventListener('click', function () { flip.classList.add('is-flipped'); });
-  flipBack.addEventListener('click', function () { flip.classList.remove('is-flipped'); });
-});
+(function () {
+  // Send to both Google Analytics and the HQ dashboard (w.js already forwards
+  // gtag events, so firing gtag alone is enough and avoids double counting).
+  function fire(name, props) {
+    try { if (typeof gtag === "function") gtag("event", name, props || {}); } catch (e) {}
+  }
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+
+  // ---- flavor-aware copy ----------------------------------------------
+  // Future per-flavor QR codes: /whatchalookinat?f=pl  or  ?f=tp
+  // (also accepts peach / punch). No param = generic version.
+  var FLAVORS = {
+    tp: { name: "Tropical Punch", sub: "Tropical Punch, mid-hang. Excellent taste.", other: "Peach Lemonade" },
+    pl: { name: "Peach Lemonade", sub: "Peach Lemonade, mid-hang. Excellent taste.", other: "Tropical Punch" }
+  };
+  function normFlavor(v) {
+    v = (v || "").toLowerCase();
+    if (/^(tp|punch|tropical|tropical_punch|tropical-punch)$/.test(v)) return "tp";
+    if (/^(pl|peach|peach_lemonade|peach-lemonade)$/.test(v)) return "pl";
+    return null;
+  }
+  var report = document.querySelector("[data-wla-report]");
+  var countEl = document.querySelector("[data-wla-count]");
+  function updateCount() {
+    var polls = [].filter.call(report.querySelectorAll("[data-wla-poll]"), function (p) { return p.style.display !== "none"; });
+    var done = polls.filter(function (p) { return p.classList.contains("is-done"); }).length;
+    countEl.textContent = done + " / " + polls.length + " FILED";
+    report.classList.toggle("is-filed", done === polls.length);
+  }
+  function applyFlavor(code, fromScan) {
+    var f = FLAVORS[code]; if (!f) return;
+    document.body.classList.remove("is-flavor-tp", "is-flavor-pl");
+    document.body.classList.add("is-flavor-" + code);
+    if (fromScan) {
+      document.querySelector("[data-wla-sub]").textContent = f.sub;
+      var fp = document.querySelector("[data-wla-flavor-poll]");
+      if (fp) fp.style.display = "none"; // we already know, don't ask
+    }
+    document.querySelector("[data-wla-find-title]").textContent = "Now meet " + f.other + ".";
+    document.querySelector("[data-wla-find-copy]").textContent = "You've had " + f.name + ". Its other half is out there.";
+  }
+  var qp = null; try { qp = new URLSearchParams(location.search); } catch (e) {}
+  var scanned = normFlavor(qp && (qp.get("f") || qp.get("flavor")));
+  fire("wla_scan", { flavor: scanned || "unknown" });
+  if (scanned) applyFlavor(scanned, true);
+
+  // ---- hang report polls ---------------------------------------------
+  var THANKS = {
+    flavor_in_hand: { tropical_punch: "Solid pick. Peach Lemonade is waiting below.", peach_lemonade: "Solid pick. Tropical Punch is waiting below." },
+    rating: { obsessed: "Same, honestly.", into_it: "We'll take it.", its_fine: "Fair. We're working on it.", not_for_me: "Respect. Try the other flavor before you decide?" },
+    next_flavor_name: "Vote counted. Watch @drinkwhatcha for the reveal."
+  };
+  report.querySelectorAll("[data-wla-poll]").forEach(function (poll) {
+    var key = poll.getAttribute("data-wla-poll");
+    var thanks = poll.querySelector(".wla-poll__thanks");
+    function mark(val) {
+      poll.classList.add("is-done");
+      poll.querySelectorAll(".wla-chip").forEach(function (c) {
+        var on = c.getAttribute("data-value") === val;
+        c.classList.toggle("is-picked", on);
+        c.setAttribute("aria-pressed", on ? "true" : "false");
+      });
+      var t = THANKS[key]; thanks.textContent = typeof t === "string" ? t : (t && t[val]) || "Thanks!";
+      updateCount();
+    }
+    var prev = store("wla_poll_" + key);
+    if (prev) { mark(prev); if (key === "flavor_in_hand" && !scanned) applyFlavor(prev === "tropical_punch" ? "tp" : "pl", false); }
+    poll.querySelectorAll(".wla-chip").forEach(function (chip) {
+      chip.setAttribute("aria-pressed", "false");
+      chip.addEventListener("click", function () {
+        var val = chip.getAttribute("data-value");
+        if (store("wla_poll_" + key) === val) return;
+        mark(val);
+        store("wla_poll_" + key, val);
+        fire("wla_poll", { poll: key, answer: val, flavor: scanned || "unknown" });
+        if (key === "flavor_in_hand") applyFlavor(val === "tropical_punch" ? "tp" : "pl", false);
+      });
+    });
+  });
+  updateCount();
+
+  // ---- copy the tag ---------------------------------------------------
+  var copyBtn = document.querySelector("[data-wla-copy]");
+  var copyStatus = document.querySelector("[data-wla-copy-status]");
+  if (copyBtn) copyBtn.addEventListener("click", function () {
+    var text = copyBtn.getAttribute("data-wla-copy");
+    function done(ok) { copyStatus.textContent = ok ? "Copied. Paste it in your caption." : "Tag us: " + text; }
+    fire("wla_copy_tag", {});
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { done(true); }, function () { done(false); });
+      else done(false);
+    } catch (e) { done(false); }
+  });
+})();
 </script>
 <script src="../assets/ig-feed.js" defer></script>
 </body>
